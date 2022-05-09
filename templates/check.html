@@ -312,7 +312,7 @@
 
                 fear = parseFloat(detections[0].expressions.fearful).toFixed(8)
                 if(fear > 0.15) {
-                    alert("이상 징후가 감지되었습니다. 추가인증을 해주세요.")
+                    alert("이상 징후가 감지되었습니다. 추가인증을 해주세요....")
                     window.location.href = '/v2/fail';
                 }else{
 

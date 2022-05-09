@@ -28,6 +28,7 @@ urlpatterns = [
     path('v2/faceLog', views.v2_facelog, name='v2_facelog'),
     path('v2/voiceLog', views.v2_voicelog, name='v2_voicelog'),
     path('v2/emotionLog', views.v2_emotionlog, name='v2_emotionlog'),
+    path('v2/emotionLogDetail/<method>', views.v2_emotionLogDetail, name='v2_emotionLogDetail'),
     path('v2/failLog', views.v2_faillog, name='v2_faillog'),
     path('v2/signOut', views.v2_signOut, name='v2_signOut'),
     path('v2/signUp', views.v2_signUp, name='v2_signUp'),

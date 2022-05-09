@@ -203,7 +203,7 @@ function getCookie(name) {
     return cookieValue;
 }
 constcsrftoken= getCookie('csrftoken');
-```
+````1``
 
 - voice
 

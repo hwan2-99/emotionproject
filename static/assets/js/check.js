@@ -1,3 +1,6 @@
+//html 문서에서 버튼을 눌렀을 때 동작할 이벤트들을 정의
+//+ 기타기능
+
 
 //PC 모바일 확인
 function mobilePcCheck(){
@@ -183,7 +186,7 @@ $("#emotionlog").click(function (){
          navigator.geolocation.getCurrentPosition(function(position) {
             gps = position.coords.latitude + ' ' + position.coords.longitude;
 
-            location.href = "/v2/emotionLog?gps="+gps+"&device="+device;
+            location.href = "/v2/emotionLogDetail/Default?gps="+gps+"&device="+device;
         }, function(error) {
           console.error(error);
         }, {
@@ -195,7 +198,78 @@ $("#emotionlog").click(function (){
           gps = "X";
       }
 })
+$("#emotiondetail").click(function (){
+    device = mobilePcCheck();
+     if (navigator.geolocation) { // GPS를 지원하면
+         navigator.geolocation.getCurrentPosition(function(position) {
+            gps = position.coords.latitude + ' ' + position.coords.longitude;
 
+            location.href = "/v2/emotionLogDetail/Default?gps="+gps+"&device="+device;
+        }, function(error) {
+          console.error(error);
+        }, {
+          enableHighAccuracy: false,
+          maximumAge: 0,
+          timeout: Infinity
+        });
+      } else {
+          gps = "X";
+      }
+})
+$("#emotionfuzzy").click(function (){
+    device = mobilePcCheck();
+     if (navigator.geolocation) { // GPS를 지원하면
+         navigator.geolocation.getCurrentPosition(function(position) {
+            gps = position.coords.latitude + ' ' + position.coords.longitude;
+
+            location.href = "/v2/emotionLogDetail/Fuzzy?gps="+gps+"&device="+device;
+        }, function(error) {
+          console.error(error);
+        }, {
+          enableHighAccuracy: false,
+          maximumAge: 0,
+          timeout: Infinity
+        });
+      } else {
+          gps = "X";
+      }
+})
+$("#emotionmaut").click(function (){
+    device = mobilePcCheck();
+     if (navigator.geolocation) { // GPS를 지원하면
+         navigator.geolocation.getCurrentPosition(function(position) {
+            gps = position.coords.latitude + ' ' + position.coords.longitude;
+
+            location.href = "/v2/emotionLogDetail/Maut?gps="+gps+"&device="+device;
+        }, function(error) {
+          console.error(error);
+        }, {
+          enableHighAccuracy: false,
+          maximumAge: 0,
+          timeout: Infinity
+        });
+      } else {
+          gps = "X";
+      }
+})
+$("#emotiongraph").click(function (){
+    device = mobilePcCheck();
+     if (navigator.geolocation) { // GPS를 지원하면
+         navigator.geolocation.getCurrentPosition(function(position) {
+            gps = position.coords.latitude + ' ' + position.coords.longitude;
+
+            location.href = "/v2/emotionLogDetail/Graph?gps="+gps+"&device="+device;
+        }, function(error) {
+          console.error(error);
+        }, {
+          enableHighAccuracy: false,
+          maximumAge: 0,
+          timeout: Infinity
+        });
+      } else {
+          gps = "X";
+      }
+})
 
 $("#userlog").click(function (){
     device = mobilePcCheck();

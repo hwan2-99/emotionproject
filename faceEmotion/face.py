@@ -3,6 +3,7 @@ import base64
 
 import numpy as np
 import pymongo as mongo
+from tensorflow import keras
 from keras.preprocessing.image import img_to_array
 from keras.models import load_model
 from uuid import uuid4

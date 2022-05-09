@@ -29,7 +29,7 @@ APPEND_SLASH = False
 # Application definition
 
 INSTALLED_APPS = [
-     'django.contrib.admin',
+    'django.contrib.admin',
     'django.contrib.auth',
     'emotionSys',
     'restApi',
@@ -70,7 +70,6 @@ TEMPLATES = [
         },
     },
 ]
-
 
 WSGI_APPLICATION = 'emotionProject.wsgi.application'
 
@@ -157,3 +156,5 @@ EMAIL_PORT = my_settings.EMAIL['EMAIL_PORT']
 EMAIL_HOST = my_settings.EMAIL['EMAIL_HOST']
 EMAIL_HOST_USER = my_settings.EMAIL['EMAIL_HOST_USER']
 EMAIL_HOST_PASSWORD = my_settings.EMAIL['EMAIL_HOST_PASSWORD']
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

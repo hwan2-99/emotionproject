@@ -83,11 +83,11 @@ function createDownloadLink(blob) {
             contentType: false,    // 반드시 작성
             success : function(result){
                 if(result.data.negative > 0.4) {
-                    alert("이상 징후가 감지되었습니다. 추가인증을 해주세요.")
+                    alert("이상 징후가 감지되었습니다. 추가인증을 해주세요..")
                     window.location.href = '/v2/fail';
                 }
             },
-            error : function(xtr,status,error){
+            error : function(xtr,status,error){-
                alert("측정 오류. 기존 페이지를 유지합니다.")
             }
         });

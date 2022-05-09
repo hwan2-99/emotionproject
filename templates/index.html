@@ -43,6 +43,7 @@
     }
     const csrftoken = getCookie('csrftoken');
 </script>
+
 <body id="page-top">
     {% if error %}
         <script>
@@ -56,13 +57,13 @@
         <nav class="navbar gradient navbar-dark align-items-start sidebar sidebar-dark accordion bg-gradient-primary p-0">
             <div class="container-fluid d-flex flex-column p-0"><a class="navbar-brand d-flex justify-content-center align-items-center sidebar-brand m-0" href="main">
                     <div class="sidebar-brand-icon rotate-n-15"></div>
-                    <div class="sidebar-brand-text mx-3"><span>00 은행 시스템<br></span></div>
+                    <div class="sidebar-brand-text mx-3"><span>00 g은행 시스템<br></span></div>
                 </a>
                 <hr class="sidebar-divider my-0">
                 <ul class="navbar-nav text-light" id="accordionSidebar">
                     <li class="nav-item"><a class="nav-link active" id="facelog" href="#"><i class="far fa-surprise"></i><span>얼굴 측정 값</span></a></li>
                     <li class="nav-item"><a class="nav-link active" id="voicelog" href="#"><i class="fas fa-microphone-alt"></i><span>목소리 측정 값</span></a></li>
-                    <li class="nav-item"><a class="nav-link active" id="emotionlog" href="#"><i class="fas fa-microphone-alt"></i><span>감성 통합 분석</span></a></li>
+                    <li class="nav-item"><a class="nav-link active" id="emotionlog" href="#"><i class="fas fa-microphone-alt"></i><span>감성 통합 정보</span></a></li>
                     <li class="nav-item"><a class="nav-link active" id="userlog" href="#"><i class="fas fa-male"></i><span>사용자 로그</span></a></li>
 
                     {% if type %}
@@ -378,7 +379,7 @@
                 success : function(result){
                     fear = parseFloat(detections[0].expressions.fearful).toFixed(8)
                     if(fear > 0.15 || result.face == 'X') {``
-                        alert("이상 징후가 감지되었습니다. 추가인증을 해주세요.")
+                        alert("이상 징후가 감지되었습니다. 추가인증을 해주세요...")
                         window.location.href = '/v2/fail';
                     }
 
