@@ -23,7 +23,7 @@ from requests import Response
 from rest_framework import status
 from rest_framework.utils import json
 
-from emotionSys.models import User, AuthSms, Auth_Category, AuthEmail   # , User_Security, Security
+from emotionSys.models import User, AuthSms, Auth_Category, AuthEmail, Emotion  # , User_Security, Security
 from my_settings import EMAIL
 
 
@@ -497,22 +497,98 @@ def v2_fail(request):
         return render(request, 'check.html', {'username': request.session.get('userName'), 'type': request.session.get('type')})
 
 def v2_emotionlog(request):
-    request.method == 'GET'
-
     client1 = mongo.MongoClient()
     emotion_db = client1.emotion
     emotion_collection = emotion_db.emotion
     result = emotion_collection.find({})
-
     user_email = request.session.get('user_email')
-
-    print(result)
-    print(user_email)
 
     return render(request, 'userEmotion.html',
                   {'result': result,
                    'user': user_email
                    })
+
+def v2_emotionLogDetail(request,method=''):
+    client1 = mongo.MongoClient()
+    emotion_db = client1.emotion
+    emotion_collection = emotion_db.emotion
+    result = emotion_collection.find({})
+    user_email = request.session.get('user_email')
+    list = []
+    for emotion in result:
+        face = emotion['face']
+        voice = emotion['voice']
+        brain = emotion['brain']
+        if method == 'Default':
+            list.append({'id':emotion['id'],
+                         'face':emotion['face'],
+                         'voice':emotion['voice'],
+                         'brain':emotion['brain'],
+                         'user':emotion['user'],
+                         'createAt':emotion['createAt'],
+                         'result':emotionDetailDefault(face,voice,brain)
+                         })
+        if method == 'Fuzzy':
+            list.append({'id':emotion['id'],
+                         'face':emotion['face'],
+                         'voice':emotion['voice'],
+                         'brain':emotion['brain'],
+                         'user':emotion['user'],
+                         'createAt':emotion['createAt'],
+                         'result':emotionDetailFuzzy(face,voice,brain)
+                         })
+        if method == 'Maut':
+            list.append({'id':emotion['id'],
+                         'face':emotion['face'],
+                         'voice':emotion['voice'],
+                         'brain':emotion['brain'],
+                         'user':emotion['user'],
+                         'createAt':emotion['createAt'],
+                         'result':emotionDetailMaut(face,voice,brain)
+                         })
+        if method == 'Graph':
+            list.append({'id':emotion['id'],
+                         'face':emotion['face'],
+                         'voice':emotion['voice'],
+                         'brain':emotion['brain'],
+                         'user':emotion['user'],
+                         'createAt':emotion['createAt'],
+                         'result':False
+                         })
+
+    return render(request, 'userEmotion'+method+'.html',
+                  {'result': list,
+                   'data': request.session.get('userName'),
+                   'user': user_email,
+                   'field':user_email,
+                   'username': request.session.get('userName'),
+                   'type': request.session.get('type')
+                   })
+
+def emotionDetailDefault(face,voice,brain):
+    cnt = 0;
+    if (face >= 0.5):
+        cnt = cnt + 1
+    if (voice >= 0.5):
+        cnt = cnt + 1
+    if (brain >= 0.5):
+        cnt = cnt + 1
+    if (cnt > 2):
+        return True
+    else:
+        return False
+
+def emotionDetailFuzzy(face,voice,brain):
+    if (face >= 0.7 and voice >= 0.7 and brain >= 0.7):
+        return True
+    else:
+        return False
+
+def emotionDetailMaut(face,voice,brain):
+    if (face * 0.3 + voice * 0.3 + brain * 0.4 > 0.8):
+        return True
+    else:
+        return False
 
 def v2_emailCheck(request):
     if request.method == 'GET':

@@ -1,0 +1,13 @@
+관리자
+email: dsu
+password: dsuemotion
+
+---
+
+링크
+https://192.168.64.1:8000/v2/main
+https://192.168.64.1:8000/adminemotionSys/user/
+
+유저
+abc
+123

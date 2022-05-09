@@ -39,6 +39,26 @@
     <script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
     <script> var arr= new Array() </script>
 </head>
+<script>
+    let detectTF = false;
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+</script>
 
 <body id="page-top">
     <div id="wrapper">
@@ -53,7 +73,7 @@
                 <ul class="navbar-nav text-light" id="accordionSidebar">
                     <li class="nav-item"><a class="nav-link active" id="facelog" href="#"><i class="far fa-surprise"></i><span>얼굴 측정 값</span></a></li>
                     <li class="nav-item"><a class="nav-link active" id="voicelog" href="#"><i class="fas fa-microphone-alt"></i><span>목소리 측정 값</span></a></li>
-                    <li class="nav-item"><a class="nav-link active" id="emotionlog" href="#"><i class="fas fa-microphone-alt"></i><span>감성 통합 분석</span></a></li>
+                    <li class="nav-item"><a class="nav-link active" id="emotionlog" href="#"><i class="fas fa-microphone-alt"></i><span>감성 통합 정보</span></a></li>
                     <li class="nav-item"><a class="nav-link active" id="userlog" href="#"><i class="fas fa-male"></i><span>사용자 로그</span></a></li>
 
                     {% if type %}
@@ -65,6 +85,24 @@
                     {% endif %}
                     <li class="nav-item"></li>
                 </ul>
+                {% if type %}
+                    {#                <div class = "fw-bold m-0 FontColorBlack">측정 중 입니다..</div>#}
+                    <div>
+                        <div id="voice_loading" style="display:none" class="spinner-grow text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div></div>
+                        <div id="face_loading" style="display:none" class="spinner-grow text-secondary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div></div>
+                        <div id="brainwave_loading" style="display:none" class="spinner-grow text-success"
+                             role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    <div></div>
+                {% endif %}
                 <div class="text-center d-none d-md-inline"><button class="btn rounded-circle border-0" id="sidebarToggle" type="button"></button></div>
             </div>
         </nav>
@@ -161,6 +199,15 @@
                                             &nbsp;
                                             <span class=" d-lg-inline me-2 text-gray-600 small" onclick="location.href='/v2/signOut'">로그아웃</span>
                                         </span>
+                                        {% if type %}
+                                         <script>
+                                            detectTF = true;
+                                            setInterval(function () {
+                                                startRecording();
+                                                setTimeout(stopRecording, 5000);
+                                            }, 10000);
+                                         </script>
+                                        {% endif %}
                                     {% else %}
                                         <span class="dropdown-toggle nav-link" aria-expanded="false">
                                             <span class=" d-lg-inline me-2 text-gray-600 small" onclick="location.href='/v2/signIn'">로그인</span>
@@ -386,6 +433,112 @@
                 // 옵션
         console.log("sss")
 
-        </script>
+    </script>
+
+    {% if type %}
+    <script>
+        const video = document.getElementById("video");
+
+        // face api 허용
+        Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri("{% static 'assets/models' %}"),
+          faceapi.nets.faceLandmark68Net.loadFromUri("{% static 'assets/models' %}"),
+          faceapi.nets.faceRecognitionNet.loadFromUri("{% static 'assets/models' %}"),
+          faceapi.nets.faceExpressionNet.loadFromUri("{% static 'assets/models' %}"),
+        ]).then(startVideo);
+
+        // 비디오 시작 함수
+        function startVideo() {
+          navigator.mediaDevices
+            .getUserMedia({ video: true })
+            .then(function (stream) {
+              video.srcObject = stream;
+            })
+            .catch(function (err) {
+              console.log(err);
+            });
+        }
+
+        // 비디오 사이즈
+        video.addEventListener("playing", () => {
+          const canvas = faceapi.createCanvasFromMedia(video);
+          document.body.append(canvas);
+          const displaySize = { width: video.width, height: video.height };
+          faceapi.matchDimensions(canvas, displaySize);
+
+        });
+        // 비동기 처리 얼굴 표정 값
+        setInterval(async () => {
+            document.getElementById("face_loading").style.display = 'block';
+            const detections = await faceapi
+              .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+              .withFaceLandmarks()
+              .withFaceExpressions();
+            var data = detections[0].expressions.fearful;
+            console.log(parseFloat(data).toFixed(8));
+
+            const canvas = document.getElementById("canvas_video");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext("2d").drawImage(video, 0, 0,canvas.width, canvas.height);
+            const dataURL = canvas.toDataURL();
+            var fd=new FormData();
+            fd.append("faceURL", dataURL)
+            fd.append("neutral", parseFloat(detections[0].expressions.neutral).toFixed(8));
+            fd.append("happy", parseFloat(detections[0].expressions.happy).toFixed(8));
+            fd.append("angry", parseFloat(detections[0].expressions.angry).toFixed(8));
+            fd.append("sad", parseFloat(detections[0].expressions.sad).toFixed(8));
+            fd.append("fearful", parseFloat(detections[0].expressions.fearful).toFixed(8));
+            $.ajax({
+                headers: {'X-CSRFToken': csrftoken},
+                type : 'POST',
+                url : '/v2/face',
+                data : fd,
+                dataType: 'json',
+                processData: false,    // 반드시 작성
+                contentType: false,    // 반드시 작성
+                success : function(result){
+                    fear = parseFloat(detections[0].expressions.fearful).toFixed(8)
+                    if(fear > 0.15 || result.face == 'X') {``
+                        alert("이상 징후가 감지되었습니다. 추가인증을 해주세요.")
+                        window.location.href = '/v2/fail';
+                    }
+
+                },
+                error : function(xtr,status,error){
+                   alert("측정 오류. 기존 페이지를 유지합니다.")
+                }
+            });
+
+          }, 10000);
+        document.getElementById("face_loading").style.display = 'none';
+        //미디어 허용
+        if (navigator.mediaDevices.getUserMedia) {
+          navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function (stream) {
+              video.srcObject = stream;
+            })
+            .catch(function (err0r) {
+              console.log("Something went wrong!");
+            });
+        }
+    </script>
+    {% endif %}
+
+
+    {% if username %}
+    <script src='{% static "assets/js/check.js" %}'></script>
+
+        {% if type %}
+            <script>
+                detectTF = true;
+                setInterval(function () {
+                    startRecording();
+                    setTimeout(stopRecording, 5000);
+                }, 10000);
+            </script>
+        {% endif %}
+
+    {% endif %}
 </body>
 </html>
