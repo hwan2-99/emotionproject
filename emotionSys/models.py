@@ -18,6 +18,7 @@ class User(models.Model):
     type = models.CharField(max_length=50, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    pattern = models.IntegerField()
 
     class Meta:
         db_table = "user"
