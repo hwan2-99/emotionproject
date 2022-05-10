@@ -644,6 +644,46 @@ def v2_emailCheck(request):
             print('fail')
             return render(request, 'check.html')
 
+def v2_patternCheck(request):
+    if request.method == 'GET':
+
+        user_email = request.session.get('user_email')
+
+        gps = request.GET.get('gps')
+        device = request.GET.get('device')
+        client1 = mongo.MongoClient()
+        dbs = client1.log
+        DBLog = dbs["admin"]
+        data = {"log": "main", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
+
+        if user_email is None:
+            return render(request, 'index.html')
+
+        else:
+
+            return render(request, 'index.html', {'username': request.session.get('userName'), 'type': request.session.get('type')})
+
+def v2_questionCheck(request):
+    if request.method == 'GET':
+
+        user_email = request.session.get('user_email')
+
+        gps = request.GET.get('gps')
+        device = request.GET.get('device')
+        client1 = mongo.MongoClient()
+        dbs = client1.log
+        DBLog = dbs["admin"]
+        data = {"log": "main", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
+
+        if user_email is None:
+            return render(request, 'index.html')
+
+        else:
+
+            return render(request, 'index.html', {'username': request.session.get('userName'), 'type': request.session.get('type')})
+
+
+
 class v2_phoneCheck(View):
 
     def send_sms(self, auth_phone, auth_number):

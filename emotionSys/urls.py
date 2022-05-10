@@ -35,6 +35,8 @@ urlpatterns = [
     path('v2/fail', views.v2_fail, name='v2_fail'),
     path('v2/emailCheck', views.v2_emailCheck, name='v2_emailCheck'),
     path('v2/phoneCheck', v2_phoneCheck.as_view(), name='v2_phoneCheck'),
+    path('v2/patternCheck', views.v2_patternCheck, name='v2_patternCheck'),
+    path('v2/questionCheck', views.v2_questionCheck, name='v2_questionCheck'),
     # path('v2/locateCheck', views.v2_locateCheck, name='v2_locateCheck'),
     # path('v2/emotionCheck', views.v2_emotionCheck, name='v2_emotionCheck'),
     # admin 기능 관리자 페이지 --> 추후 사용자, 관리자로 분리
