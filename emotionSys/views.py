@@ -28,6 +28,7 @@ from my_settings import EMAIL
 
 
 def main(request):
+
     request.method == 'GET'
     user_email = request.session.get('user')
     print(user_email)
@@ -514,6 +515,7 @@ def v2_emotionLogDetail(request,method=''):
     emotion_collection = emotion_db.emotion
     result = emotion_collection.find({})
     user_email = request.session.get('user_email')
+
     list = []
     for emotion in result:
         face = emotion['face']
@@ -656,12 +658,18 @@ def v2_patternCheck(request):
         DBLog = dbs["admin"]
         data = {"log": "main", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
 
+        user = User.objects.get(email=user_email)
+
         if user_email is None:
             return render(request, 'index.html')
-
         else:
 
-            return render(request, 'index.html', {'username': request.session.get('userName'), 'type': request.session.get('type')})
+            return render(request,
+                          'patternCheck.html',
+                          {'username': request.session.get('userName'),
+                           'type': request.session.get('type'),
+                            'pattern' : user.pattern
+                           })
 
 def v2_questionCheck(request):
     if request.method == 'GET':
