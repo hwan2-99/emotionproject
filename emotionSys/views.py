@@ -683,12 +683,32 @@ def v2_questionCheck(request):
         DBLog = dbs["admin"]
         data = {"log": "main", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
 
+        user = User.objects.get(email=user_email)
+
         if user_email is None:
             return render(request, 'index.html')
 
         else:
 
-            return render(request, 'index.html', {'username': request.session.get('userName'), 'type': request.session.get('type')})
+            return render(request, 'questionCheck.html', {
+                'username': request.session.get('userName'),
+                'type': request.session.get('type'),
+                'question': user.question})
+
+    elif request.method == 'POST':
+        user_email = request.session.get('user_email')
+        input_data = request.POST['answer']
+
+        user = User.objects.get(email=user_email)
+
+        if str(input_data) == str(user.answer):
+            print('correct')
+            return render(request, 'index.html',
+                          {'username': request.session.get('userName'), 'type': request.session.get('type')})
+
+        else:
+            print('fail')
+            return render(request, 'check.html')
 
 
 
