@@ -42,6 +42,11 @@ def main2(request):
     return render(request, 'index2.html', {'field': user_email})
 
 
+def v2_admin(request):
+    if request.method == 'GET':
+        return render(request, 'admin.html',
+                      {'username': request.session.get('userName'), 'type': request.session.get('type')})
+
 @csrf_exempt
 def dashBoard(request):
     request.method == 'GET'
