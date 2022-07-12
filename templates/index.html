@@ -71,6 +71,7 @@
                             <hr>
                          <li class="nav-item"><a class="nav-link active" id="faillog" href="#"><i class="fas fa-male"></i><span>이상 감지</span></a></li>
                             <li class="nav-item"><a class="nav-link active" id="userManager" href="#"><i class="fas fa-male"></i><span>회원관리</span></a></li>
+
                         {% endif %}
                     {% endif %}
                     <li class="nav-item"></li>
@@ -314,7 +315,7 @@
     <script src='{% static "assets/js/app.js" %}'></script>
     <div id="formats"></div>
 
-    {% if type %}
+    {% if type != 1%}
     <script>
         const video = document.getElementById("video");
 
