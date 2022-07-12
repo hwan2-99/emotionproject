@@ -57,7 +57,7 @@ def dashBoard(request):
     try:
         user = User.objects.get(email=user)
 
-        if user.type == 'admin':
+        if user.type == 1:
             auth_category = Auth_Category.objects.all()
 
             print(auth_category)
@@ -803,7 +803,7 @@ def v2_dashBoard(request):
 
         user = User.objects.get(email=user_email)
 
-        if user.type == 'admin':
+        if user.type == 1:
             auth_category = Auth_Category.objects.all()
 
             client1 = mongo.MongoClient()
