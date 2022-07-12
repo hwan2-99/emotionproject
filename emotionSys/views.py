@@ -300,31 +300,29 @@ def v2_main(request):
 
             return render(request, 'index.html', {'username': request.session.get('userName'), 'type': request.session.get('type')})
 
-
 def v2_userManager(request):
     request.method == 'GET'
     # Mongo 클라이언트 생성
-
     client1 = mongo.MongoClient()
-
-
-    # 데이터베이스를 생성 혹은 지정
     dbs = client1.log
+    # 데이터베이스를 생성 혹은 지정
     id = request.session.get("user_email")
+    DBLog = dbs[id]
+    DBEmotion = dbs[id]
     #로그 기록 찍기
     gps = request.GET.get('gps')
     device = request.GET.get('device')
-    client1 = mongo.MongoClient()
-    dbs = client1.log
-    DBLog = dbs[id]
+    # sqlite3
+    try:
+        users = User.objects.all()
+    except User.DoesNotExist:
+        return render(request, 'index.html', {'error': 'No signIn'})
     data = {"log": "userManager", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
-
-    DBEmotion = dbs[id]
-
     DBEmotion.insert_one(data)
     result = User.objects.all()
-    print(result[0].email)
-    return render(request, 'userManager.html', {'data': result, 'username': request.session.get('userName'), 'type': request.session.get('type')})
+    
+
+    return render(request, 'userManager.html', {'data': result, 'username': request.session.get('userName'), 'type': request.session.get('type'),"users":users,"initialization":[3,1]})
 
 
 
@@ -441,7 +439,6 @@ def v2_signIn(request):
 
         user_email = request.POST['user_email']
         user_pw = request.POST['user_pw']
-
 
         try:
             user = User.objects.get(email=user_email, password=user_pw)

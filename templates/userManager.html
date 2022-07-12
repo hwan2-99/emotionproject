@@ -255,9 +255,9 @@
 {#                                        </tbody>#}
 {#                                    </table>#}
                                     <select class="form-select" multiple aria-label="multiple select example">
-                                        <option value="1" selected>kim@gmail.com</option>
-                                        <option value="2">young@gmail.com</option>
-                                        <option value="3">larry@gmail.com</option>
+                                                {% for user in users %}
+                                                    <option value="{{user.email}}" selected>{{user.email}}</option>
+                                                {% endfor %}
                                     </select>
                                 </div>
                                 <div class="col-lg-6 mb-3">
@@ -272,34 +272,66 @@
                                         <tbody>
                                         <tr>
                                             <td>질문 답변 재인증</td>
-                                            <td><input class="form-check-input" type="radio" name="certification" checked></td>
+                                            {% if initialization.0 == 1 %}
+                                                <td><input class="form-check-input" type="radio" name="certification" checked></td>
+                                            {% else %}
+                                                <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% endif %}
                                         </tr>
                                         <tr>
                                             <td>감정 기반 재인증</td>
-                                            <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% if initialization.0 == 2 %}
+                                                <td><input class="form-check-input" type="radio" name="certification" checked></td>
+                                            {% else %}
+                                                <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% endif %}
                                         </tr>
                                         <tr>
                                             <td>이메일 재인증</td>
-                                            <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% if initialization.0 == 3 %}
+                                                <td><input class="form-check-input" type="radio" name="certification" checked></td>
+                                            {% else %}
+                                                <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% endif %}
                                         </tr>
                                         <tr>
                                             <td>위치 기반 재인증(현재 미운용)</td>
-                                            <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% if initialization.0 == 4 %}
+                                                <td><input class="form-check-input" type="radio" name="certification" checked></td>
+                                            {% else %}
+                                                <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% endif %}
                                         </tr>
                                         <tr>
                                             <td>휴대폰 번호 재인증</td>
-                                            <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% if initialization.0 == 5 %}
+                                                <td><input class="form-check-input" type="radio" name="certification" checked></td>
+                                            {% else %}
+                                                <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% endif %}
+
                                         </tr>
                                         <tr>
                                             <td>패턴 재인증</td>
-                                            <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% if initialization.0 == 6 %}
+                                                <td><input class="form-check-input" type="radio" name="certification" checked></td>
+                                            {% else %}
+                                                <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% endif %}
+
                                         </tr>
                                         <tr>
                                             <td>질문 답변 재인증</td>
-                                            <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% if initialization.0 == 7 %}
+                                                <td><input class="form-check-input" type="radio" name="certification" checked></td>
+                                            {% else %}
+                                                <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% endif %}
                                         </tr>
                                         </tbody>
                                     </table>
+
+
                                 </div>
                                 <div class="col-lg-6 mb-3">
                                     <h5 class="text-dark mb-3">암호화 알고리즘</h5>
@@ -313,11 +345,19 @@
                                         <tbody>
                                         <tr>
                                             <td>대칭키</td>
-                                            <td><input class="form-check-input" type="radio" name="encryption" checked></td>
+                                            {% if initialization.1 == 1 %}
+                                                <td><input class="form-check-input" type="radio" name="encryption" checked></td>
+                                            {% else %}
+                                                <td><input class="form-check-input" type="radio" name="encryption"></td>
+                                            {% endif %}
                                         </tr>
                                         <tr>
                                             <td>비대칭키</td>
-                                            <td><input class="form-check-input" type="radio" name="encryption"></td>
+                                            {% if initialization.1 == 2 %}
+                                                <td><input class="form-check-input" type="radio" name="encryption" checked></td>
+                                            {% else %}
+                                                <td><input class="form-check-input" type="radio" name="encryption"></td>
+                                            {% endif %}
                                         </tr>
                                         </tbody>
                                     </table>
