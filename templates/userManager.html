@@ -221,42 +221,18 @@
                         </div>
                     </div>
 
-
-
                     <div class="row">
                         <div class="col">
                             <div class="row">
                                 <div class="col-lg-6 mb-4">
                                     <h5 class="text-dark mb-3">사용자 선택</h5>
-{#                                    <table class="table">#}
-{#                                        <thead>#}
-{#                                        <tr>#}
-{#                                            <th scope="col">이메일</th>#}
-{#                                            <th scope="col">이름</th>#}
-{#                                            <th scope="col"></th>#}
-{#                                        </tr>#}
-{#                                        </thead>#}
-{#                                        <tbody>#}
-{#                                        <tr>#}
-{#                                            <td>kim@gmail.com</td>#}
-{#                                            <td>Kim</td>#}
-{#                                            <td><input class="form-check-input" type="radio" name="flexRadioDefault" checked></td>#}
-{#                                        </tr>#}
-{#                                        <tr>#}
-{#                                            <td>young@gmail.com</td>#}
-{#                                            <td>Young</td>#}
-{#                                            <td><input class="form-check-input" type="radio" name="flexRadioDefault"></td>#}
-{#                                        </tr>#}
-{#                                        <tr>#}
-{#                                            <td>larry@gmail.com</td>#}
-{#                                            <td>Larry</td>#}
-{#                                            <td><input class="form-check-input" type="radio" name="flexRadioDefault"></td>#}
-{#                                        </tr>#}
-{#                                        </tbody>#}
-{#                                    </table>#}
                                     <select class="form-select" multiple aria-label="multiple select example">
                                                 {% for user in users %}
-                                                    <option value="{{user.email}}" selected>{{user.email}}</option>
+                                                    {% if users.0.email == user.email %}
+                                                        <option value="{{user.email}}" selected>{{user.email}}</option>
+                                                    {% else %}
+                                                        <option value="{{user.email}}">{{user.email}}</option>
+                                                    {% endif %}
                                                 {% endfor %}
                                     </select>
                                 </div>
@@ -331,7 +307,6 @@
                                         </tbody>
                                     </table>
 
-
                                 </div>
                                 <div class="col-lg-6 mb-3">
                                     <h5 class="text-dark mb-3">암호화 알고리즘</h5>
@@ -368,16 +343,19 @@
                 </div>
             </div>
 
+        <!-- synchronizing functions  -->
+            <script>
+                //사용자 변경
+                function changeUser(email){
+                    getSettingsOfUserNamed(email);
+
+                }
+                function getSettingsOfUserNamed(email){ // 설정 가져오기
+
+                }
 
 
-
-
-
-
-
-
-
-
+            </script>
 
             <footer class="bg-white sticky-footer">
                 <div class="container my-auto">

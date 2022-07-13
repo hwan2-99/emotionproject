@@ -23,7 +23,7 @@ from requests import Response
 from rest_framework import status
 from rest_framework.utils import json
 
-from emotionSys.models import User, AuthSms, Auth_Category, AuthEmail, Emotion  # , User_Security, Security
+from emotionSys.models import User, AuthSms, Auth_Category, AuthEmail, Emotion, EncryptionAlgorithm, ChoiceCheck  # , User_Security, Security
 from my_settings import EMAIL
 
 
@@ -305,24 +305,33 @@ def v2_userManager(request):
     # Mongo 클라이언트 생성
     client1 = mongo.MongoClient()
     dbs = client1.log
-    # 데이터베이스를 생성 혹은 지정
-    id = request.session.get("user_email")
-    DBLog = dbs[id]
-    DBEmotion = dbs[id]
     #로그 기록 찍기
+    id = request.session.get("user_email")
+    DBEmotion = dbs[id]
     gps = request.GET.get('gps')
     device = request.GET.get('device')
-    # sqlite3
+    data = {"log": "userManager", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
+    DBEmotion.insert_one(data)
+    # 유저가 없거나, 첫 번째 유저의 추가 인증 수단 or 암호화 알고리즘을 설정하지 않은 경우 메인 화면으로 보냅니다.
+
     try:
         users = User.objects.all()
     except User.DoesNotExist:
         return render(request, 'index.html', {'error': 'No signIn'})
-    data = {"log": "userManager", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
-    DBEmotion.insert_one(data)
-    result = User.objects.all()
-    
 
-    return render(request, 'userManager.html', {'data': result, 'username': request.session.get('userName'), 'type': request.session.get('type'),"users":users,"initialization":[3,1]})
+    try:
+        choiceCheck = ChoiceCheck.objects.get(email=users[0].email)
+    except User.DoesNotExist:
+        return render(request, 'index.html', {'error': 'No signIn'})
+
+    try:
+        encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=users[0].email)
+    except User.DoesNotExist:
+        return render(request, 'index.html', {'error': 'No signIn'})
+
+
+
+    return render(request, 'userManager.html', {'username': request.session.get('userName'), 'type': request.session.get('type'),"users":users,"initialization":[choiceCheck.choice,encryptionAlgorithm.choice]})
 
 
 
