@@ -312,21 +312,23 @@ def v2_userManager(request):
     device = request.GET.get('device')
     data = {"log": "userManager", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
     DBEmotion.insert_one(data)
-    # 유저가 없거나, 첫 번째 유저의 추가 인증 수단 or 암호화 알고리즘을 설정하지 않은 경우 메인 화면으로 보냅니다.
 
+    # 유저가 없는 경우 메인 화면으로 보냄
     try:
         users = User.objects.all()
     except User.DoesNotExist:
         return render(request, 'index.html', {'error': 'No signIn'})
 
+    # 첫 번째 유저의 추가 인증 수단이 설정되지 않은 경우 메인 화면으로 보냄 (검토 필요)
     try:
         choiceCheck = ChoiceCheck.objects.get(email=users[0].email)
-    except User.DoesNotExist:
+    except ChoiceCheck.DoesNotExist:
         return render(request, 'index.html', {'error': 'No signIn'})
 
+    # 첫 번째 유저의 암호화 알고리즘이 설정되지 않은 경우 메인 화면으로 보냄 (검토 필요)
     try:
         encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=users[0].email)
-    except User.DoesNotExist:
+    except EncryptionAlgorithm.DoesNotExist:
         return render(request, 'index.html', {'error': 'No signIn'})
 
 

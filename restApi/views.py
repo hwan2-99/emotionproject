@@ -19,7 +19,8 @@ from faceEmotion.face_Recognition import myface
 from django import http
 import wave
 from faceEmotion.face import faceEmotion
-
+# sqlite3 모델들
+from emotionSys.models import User, AuthSms, Auth_Category, AuthEmail, Emotion, EncryptionAlgorithm, ChoiceCheck
 
 @csrf_exempt
 @api_view(['GET', 'POST'])
@@ -141,4 +142,25 @@ def mypage_emotion(request):
 
         # 아닐 경우 return 400
 
+        return Response("ok", status=status.HTTP_200_OK)
+
+
+@api_view(['GET','UPDATE']) # 작성 중
+def choice_check(request):
+    if request.method == "GET":
+        email = request.GET.get('email')
+        choiceCheck = ChoiceCheck.objects.get(email=email)
+        return Response(choiceCheck.choice, status=status.HTTP_200_OK)
+
+    if request.method == "UPDATE":
+        return Response("ok", status=status.HTTP_200_OK)
+
+@api_view(['GET','UPDATE']) # 작성 중
+def encryption_algorithm(request):
+    if request.method == "GET":
+        email = request.GET.get('email')
+        encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=email)
+        return Response(encryptionAlgorithm.choice, status=status.HTTP_200_OK)
+
+    if request.method == "UPDATE":
         return Response("ok", status=status.HTTP_200_OK)

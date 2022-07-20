@@ -229,9 +229,9 @@
                                     <select class="form-select" multiple aria-label="multiple select example">
                                                 {% for user in users %}
                                                     {% if users.0.email == user.email %}
-                                                        <option value="{{user.email}}" selected>{{user.email}}</option>
+                                                        <option onclick="changeUser('{{user.email}}')" selected>{{user.email}}</option>
                                                     {% else %}
-                                                        <option value="{{user.email}}">{{user.email}}</option>
+                                                        <option onclick="changeUser('{{user.email}}')">{{user.email}}</option>
                                                     {% endif %}
                                                 {% endfor %}
                                     </select>
@@ -249,7 +249,7 @@
                                         <tr>
                                             <td>질문 답변 재인증</td>
                                             {% if initialization.0 == 1 %}
-                                                <td><input class="form-check-input" type="radio" name="certification" checked></td>
+                                                <td><input class="form-check-input" type="radio" name="certification" onclick="" checked></td>
                                             {% else %}
                                                 <td><input class="form-check-input" type="radio" name="certification"></td>
                                             {% endif %}
@@ -342,21 +342,92 @@
                     </div>
                 </div>
             </div>
-
         <!-- synchronizing functions  -->
             <script>
                 //사용자 변경
-                function changeUser(email){
-                    getSettingsOfUserNamed(email);
+                async function changeUser(email){
+                    const settings = await getSettingsOfUserNamed(email);
+                    const certifications = document.getElementsByName("certification");
+                    const encryptions = document.getElementsByName("encryption");
 
+                    for(let i = 0; i <certifications.length; i++){
+                        if ('radio' == certifications[i].getAttribute('type')){
+                            if( i+1 == settings[0] ){
+                                certifications[i].checked = true;
+                            }else{
+                                certifications[i].checked = false;
+                            }
+                        }
+                    }
+
+                    for(let i = 0; i <encryptions.length; i++){
+                        if ('radio' == encryptions[i].getAttribute('type')){
+                            if( i+1 == settings[1] ){
+                                encryptions[i].checked = true;
+                            }else{
+                                encryptions[i].checked = false;
+                            }
+                        }
+                    }
                 }
-                function getSettingsOfUserNamed(email){ // 설정 가져오기
-
+                async function getSettingsOfUserNamed(email){ // 설정 가져오기
+                    let result = [];
+                    await $.ajax({
+                        url: 'choice-check',
+                        type: 'get',
+                        data: {email: email},
+                        success: function onData(data) {
+                            result.push(data);
+                        },
+                        error: function onError(error) {
+                            console.error(error);
+                        }
+                    });
+                    await $.ajax({
+                        url: 'encryption-algorithm',
+                        type: 'get',
+                        data: {email: email},
+                        success: function onData(data) {
+                            result.push(data);
+                            console.log(result)
+                        },
+                        error: function onError(error) {
+                            console.error(error);
+                        }
+                    });
+                    if(result.length != 2){
+                        throw new Error("실패!");
+                    }else{
+                        return result;
+                    }
                 }
+                //설정 변경
+                async function changeSetting(email,settingNum){
+                    const settings = await getSettingsOfUserNamed(email);
+                    const certifications = document.getElementsByName("certification");
+                    const encryptions = document.getElementsByName("encryption");
 
+                    for(let i = 0; i <certifications.length; i++){
+                        if ('radio' == certifications[i].getAttribute('type')){
+                            if( i+1 == settings[0] ){
+                                certifications[i].checked = true;
+                            }else{
+                                certifications[i].checked = false;
+                            }
+                        }
+                    }
 
+                    for(let i = 0; i <encryptions.length; i++){
+                        if ('radio' == encryptions[i].getAttribute('type')){
+                            if( i+1 == settings[1] ){
+                                encryptions[i].checked = true;
+                            }else{
+                                encryptions[i].checked = false;
+                            }
+                        }
+                    }
+                }
             </script>
-
             <footer class="bg-white sticky-footer">
                 <div class="container my-auto">
                     <div class="text-center my-auto copyright"><span>Copyright © Brand 2021</span></div>
@@ -367,73 +438,74 @@
             function emotion() {
                 const video = document.getElementById("video");
 
-            // face api 허용
-            Promise.all([
-              faceapi.nets.tinyFaceDetector.loadFromUri("{% static 'assets/models' %}"),
-              faceapi.nets.faceLandmark68Net.loadFromUri("{% static 'assets/models' %}"),
-              faceapi.nets.faceRecognitionNet.loadFromUri("{% static 'assets/models' %}"),
-              faceapi.nets.faceExpressionNet.loadFromUri("{% static 'assets/models' %}"),
-            ]).then(startVideo);
+                // face api 허용
+                Promise.all([
+                  faceapi.nets.tinyFaceDetector.loadFromUri("{% static 'assets/models' %}"),
+                  faceapi.nets.faceLandmark68Net.loadFromUri("{% static 'assets/models' %}"),
+                  faceapi.nets.faceRecognitionNet.loadFromUri("{% static 'assets/models' %}"),
+                  faceapi.nets.faceExpressionNet.loadFromUri("{% static 'assets/models' %}"),
+                ]).then(startVideo);
 
-            // 비디오 시작 함수
-            function startVideo() {
-              navigator.mediaDevices
-                .getUserMedia({ video: true })
-                .then(function (stream) {
-                  video.srcObject = stream;
-                })
-                .catch(function (err) {
-                  console.log(err);
+                // 비디오 시작 함수
+                function startVideo() {
+                  navigator.mediaDevices
+                    .getUserMedia({ video: true })
+                    .then(function (stream) {
+                      video.srcObject = stream;
+                    })
+                    .catch(function (err) {
+                      console.log(err);
+                    });
+                }
+                document.getElementById("voice_loading").style.display = 'block';
+                // 비디오 사이즈
+                video.addEventListener("playing", () => {
+                  const canvas = faceapi.createCanvasFromMedia(video);
+                  document.body.append(canvas);
+                  const displaySize = { width: video.width, height: video.height, style: "visibility:hidden"};
+                  faceapi.matchDimensions(canvas, displaySize);
+
                 });
-            }
-            document.getElementById("voice_loading").style.display = 'block';
-            // 비디오 사이즈
-            video.addEventListener("playing", () => {
-              const canvas = faceapi.createCanvasFromMedia(video);
-              document.body.append(canvas);
-              const displaySize = { width: video.width, height: video.height, style: "visibility:hidden"};
-              faceapi.matchDimensions(canvas, displaySize);
 
-            });
+                // 비동기 처리 얼굴 표정 값
 
-            // 비동기 처리 얼굴 표정 값
+                setTimeout(async () => {
+                    document.getElementById("face_loading").style.display = 'block';
 
-            setTimeout(async () => {
-                document.getElementById("face_loading").style.display = 'block';
+                    document.getElementById("voice_loading").style.display = 'none';
+                    const detections = await faceapi
+                      .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+                      .withFaceLandmarks()
+                      .withFaceExpressions();
 
-                document.getElementById("voice_loading").style.display = 'none';
-                const detections = await faceapi
-                  .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-                  .withFaceLandmarks()
-                  .withFaceExpressions();
-
-                var data = detections[0].expressions.fearful;
+                    var data = detections[0].expressions.fearful;
 
 
-                console.log(parseFloat(data).toFixed(8));
+                    console.log(parseFloat(data).toFixed(8));
 
-                fear = parseFloat(detections[0].expressions.fearful).toFixed(8)
-                if(fear > 0.15) {
-                    alert("이상 징후가 감지되었습니다. 추가인증을 해주세요....")
-                    window.location.href = '/v2/fail';
-                }else{
+                    fear = parseFloat(detections[0].expressions.fearful).toFixed(8)
+                    if(fear > 0.15) {
+                        alert("이상 징후가 감지되었습니다. 추가인증을 해주세요....")
+                        window.location.href = '/v2/fail';
+                    }else{
 
-                    alert("감정 기반 재인증이 성공하였습니다.")
-                    window.location.href = '/v2/main';
+                        alert("감정 기반 재인증이 성공하였습니다.")
+                        window.location.href = '/v2/main';
+                    }
+
+                }, 3000);
+                document.getElementById("face_loading").style.display = 'none';
+                //미디어 허용
+                if (navigator.mediaDevices.getUserMedia) {
+                  navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function (stream) {
+                      video.srcObject = stream;
+                    })
+                    .catch(function (err0r) {
+                      console.log("Something went wrong!");
+                    });
                 }
 
-              }, 3000);
-            document.getElementById("face_loading").style.display = 'none';
-            //미디어 허용
-            if (navigator.mediaDevices.getUserMedia) {
-              navigator.mediaDevices.getUserMedia({ video: true })
-                .then(function (stream) {
-                  video.srcObject = stream;
-                })
-                .catch(function (err0r) {
-                  console.log("Something went wrong!");
-                });
-            }
             }
 
         </script>
