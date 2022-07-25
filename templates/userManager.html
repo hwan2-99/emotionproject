@@ -207,6 +207,7 @@
                         </ul>
                     </div>
                 </nav>
+
                 <div class="container-fluid">
                     <div class="d-sm-flex justify-content-between align-items-center mb-4">
                         <h3 class="text-dark mb-0">사용자 관리</h3>
@@ -226,12 +227,12 @@
                             <div class="row">
                                 <div class="col-lg-6 mb-4">
                                     <h5 class="text-dark mb-3">사용자 선택</h5>
-                                    <select class="form-select" multiple aria-label="multiple select example">
+                                    <select class="form-select user-select" multiple aria-label="multiple select example">
                                                 {% for user in users %}
                                                     {% if users.0.email == user.email %}
-                                                        <option onclick="changeUser('{{user.email}}')" selected>{{user.email}}</option>
+                                                        <option selected>{{user.email}}</option>
                                                     {% else %}
-                                                        <option onclick="changeUser('{{user.email}}')">{{user.email}}</option>
+                                                        <option>{{user.email}}</option>
                                                     {% endif %}
                                                 {% endfor %}
                                     </select>
@@ -249,7 +250,7 @@
                                         <tr>
                                             <td>질문 답변 재인증</td>
                                             {% if initialization.0 == 1 %}
-                                                <td><input class="form-check-input" type="radio" name="certification" onclick="" checked></td>
+                                                <td><input class="form-check-input" type="radio" name="certification" onclick="changeSetting()" checked></td>
                                             {% else %}
                                                 <td><input class="form-check-input" type="radio" name="certification"></td>
                                             {% endif %}
@@ -342,6 +343,7 @@
                     </div>
                 </div>
             </div>
+
         <!-- synchronizing functions  -->
             <script>
                 //사용자 변경
@@ -389,7 +391,6 @@
                         data: {email: email},
                         success: function onData(data) {
                             result.push(data);
-                            console.log(result)
                         },
                         error: function onError(error) {
                             console.error(error);
@@ -401,29 +402,63 @@
                         return result;
                     }
                 }
+
                 //설정 변경
-                async function changeSetting(email,settingNum){
-                    const settings = await getSettingsOfUserNamed(email);
+                async function changeSetting(e,settingNum){
+                    const emailOfSelectedUser = getEmailOfSelectedUser();
+                    let url = null
+
+                    if (e.target.name === 'certification'){
+                        url = 'choice-check'
+                    }else if(e.target.name === 'encryption'){
+                        url = 'encryption-algorithm'
+                    }
+
+                    await $.ajax({
+                        url: url,
+                        type: 'patch',
+                        data: {email: emailOfSelectedUser, settingNum : settingNum},
+                        success: function onData(data) {
+                            console.log(data);
+                        },
+                        error: function onError(error) {
+                            console.error(error);
+                        }
+                    });
+
+                }
+                //선택된 사용자의 이메일 얻기
+                function getEmailOfSelectedUser() {
+                    const userSelection = document.querySelector(".user-select").children;
+                    for(let i = 0 ; i < userSelection.length ; i++){
+                        if(userSelection[i].selected === true){
+                            return userSelection[i].innerText;
+                        }
+                    }
+                    return null;
+                }
+                //초기화
+                initialization();
+                function initialization() {
+                    const userSelection = document.querySelector(".user-select").children;
                     const certifications = document.getElementsByName("certification");
                     const encryptions = document.getElementsByName("encryption");
 
-                    for(let i = 0; i <certifications.length; i++){
-                        if ('radio' == certifications[i].getAttribute('type')){
-                            if( i+1 == settings[0] ){
-                                certifications[i].checked = true;
-                            }else{
-                                certifications[i].checked = false;
-                            }
+                    for(let i = 0 ; i < userSelection.length ; i++){
+                        if('OPTION' == userSelection[i].tagName){
+                            userSelection[i].addEventListener('click',()=>{changeUser(userSelection[i].innerText)})
                         }
                     }
 
-                    for(let i = 0; i <encryptions.length; i++){
-                        if ('radio' == encryptions[i].getAttribute('type')){
-                            if( i+1 == settings[1] ){
-                                encryptions[i].checked = true;
-                            }else{
-                                encryptions[i].checked = false;
-                            }
+                    for(let i = 0; i <certifications.length; i++){
+                        if ('radio' == certifications[i].getAttribute('type')){
+                            certifications[i].addEventListener('click',(e)=>{changeSetting(e,i+1)})
+                        }
+                    }
+
+                    for (let i = 0; i < encryptions.length; i++) {
+                        if ('radio' === encryptions[i].getAttribute('type')) {
+                            encryptions[i].addEventListener('click',(e)=>{changeSetting(e,i+1)})
                         }
                     }
                 }
@@ -468,7 +503,6 @@
                 });
 
                 // 비동기 처리 얼굴 표정 값
-
                 setTimeout(async () => {
                     document.getElementById("face_loading").style.display = 'block';
 
