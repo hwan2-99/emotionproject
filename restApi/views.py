@@ -7,6 +7,7 @@ import datetime
 import numpy as np
 import base64
 import pymongo as mongo
+import json
 from datetime import date
 
 from uuid import uuid4
@@ -23,6 +24,31 @@ from faceEmotion.face import faceEmotion
 from emotionSys.models import User, AuthSms, Auth_Category, AuthEmail, Emotion, EncryptionAlgorithm, ChoiceCheck
 
 from Crypto.Cipher import Salsa20
+from Crypto import Random
+from Crypto.Cipher import AES
+
+key = [0x10, 0x01, 0x15, 0x1B, 0xA1, 0x11, 0x57, 0x72, 0x6C, 0x21, 0x56, 0x57, 0x62, 0x16, 0x05, 0x3D,
+        0xFF, 0xFE, 0x11, 0x1B, 0x21, 0x31, 0x57, 0x72, 0x6B, 0x21, 0xA6, 0xA7, 0x6E, 0xE6, 0xE5, 0x3F]
+BS = 16
+pad = lambda s: s + (BS - len(s.encode('utf-8')) % BS) * chr(BS - len(s.encode('utf-8')) % BS)
+unpad = lambda s : s[:-ord(s[len(s)-1:])]
+
+class AESCipher:
+    def __init__( self, key ):
+        self.key = key
+
+    def encrypt( self, raw ):
+        raw = pad(raw)
+        iv = Random.new().read( AES.block_size )
+        cipher = AES.new( self.key, AES.MODE_CBC, iv )
+        return base64.b64encode( iv + cipher.encrypt( raw.encode('utf-8') ) )
+
+    def decrypt( self, enc ):
+        enc = base64.b64decode(enc)
+        iv = enc[:16]
+        cipher = AES.new(self.key, AES.MODE_CBC, iv )
+        return unpad(cipher.decrypt( enc[16:] ))
+
 
 @csrf_exempt
 @api_view(['GET', 'POST'])
@@ -87,27 +113,29 @@ def voice(request):
 
 @api_view(['GET','POST'])
 def face(request):
-    #
+
     # id = request.session.get("user")
+
     image = request.POST['faceURL'].split(',')[1]
     decoded_data = base64.b64decode(image)
     np_data = np.fromstring(decoded_data, np.uint8)
 
-
     id = request.session.get("user_email")
     result = myface(np_data,id)
     today = date.today()
-    uuid_name = uuid4().hex;
+    uuid_name = uuid4().hex
     data_json = {
         "_id": uuid_name,
         "neutral": request.POST['neutral'],
         "happy": request.POST['happy'],
-        "neutral": request.POST['neutral'],
         "angry": request.POST['angry'],
         "sad": request.POST['sad'],
         "fearful": request.POST['fearful'],
         "Date": str(datetime.datetime.now())
     }
+
+    json_data = json.dumps(data_json)
+    encrypted_data = AESCipher(bytes(key)).encrypt(json_data)
     print("hello face")
     # Mongo 클라이언트 생성
     client1 = mongo.MongoClient()
@@ -127,9 +155,8 @@ def face(request):
         }
         dbfail.insert_one(data)
 
-    print(data_json)
+    print(encrypted_data)
     return Response({'data': data_json, 'face': result}, status=status.HTTP_200_OK)
-
 
 @api_view(['UPDATE'])
 def mypage_emotion(request):
