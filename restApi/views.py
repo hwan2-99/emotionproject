@@ -78,6 +78,9 @@ def voice(request):
             'date': str(datetime.datetime.now())
         }
 
+        json_data = json.dumps(data_json)
+        encrypted_data = AESCipher(bytes(key)).encrypt(json_data)
+
         # Mongo 클라이언트 생성
         client1 = mongo.MongoClient()
         db = client1.voice
@@ -105,7 +108,7 @@ def voice(request):
             }
             dbfail.insert_one(data)
 
-        print(data_json)
+        print(encrypted_data)
         return Response({'data': data_json}, status=status.HTTP_200_OK)
 
 
