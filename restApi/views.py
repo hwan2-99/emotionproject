@@ -20,7 +20,10 @@ from faceEmotion.face_Recognition import myface
 from django import http
 import wave
 from faceEmotion.face import faceEmotion
+# sqlite3 모델들
+from emotionSys.models import User, AuthSms, Auth_Category, AuthEmail, Emotion, EncryptionAlgorithm, ChoiceCheck
 
+from Crypto.Cipher import Salsa20
 from Crypto import Random
 from Crypto.Cipher import AES
 
@@ -111,8 +114,7 @@ def voice(request):
         print(encrypted_data)
         return Response({'data': data_json}, status=status.HTTP_200_OK)
 
-
-@api_view(['GET', 'POST'])
+@api_view(['GET','POST'])
 def face(request):
 
     # id = request.session.get("user")
@@ -126,7 +128,7 @@ def face(request):
     today = date.today()
     uuid_name = uuid4().hex
     data_json = {
-         "_id": uuid_name,
+        "_id": uuid_name,
         "neutral": request.POST['neutral'],
         "happy": request.POST['happy'],
         "angry": request.POST['angry'],
@@ -172,3 +174,35 @@ def mypage_emotion(request):
         # 아닐 경우 return 400
 
         return Response("ok", status=status.HTTP_200_OK)
+
+
+@api_view(['GET','PATCH'])
+def choice_check(request):
+    if request.method == "GET":
+        email = request.GET.get('email')
+        choiceCheck = ChoiceCheck.objects.get(email=email)
+
+        return Response(choiceCheck.choice, status=status.HTTP_200_OK)
+
+    if request.method == "PATCH":
+        email = request.data['email']
+        settingNum = request.data['settingNum']
+        choiceCheck = ChoiceCheck.objects.get(email=email)
+        choiceCheck.choice = settingNum
+        choiceCheck.save()
+        return Response('ok', status=status.HTTP_200_OK)
+
+@api_view(['GET','PATCH'])
+def encryption_algorithm(request):
+    if request.method == "GET":
+        email = request.GET.get('email')
+        encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=email)
+        return Response(encryptionAlgorithm.choice, status=status.HTTP_200_OK)
+
+    if request.method == "PATCH":
+        email = request.data['email']
+        settingNum = request.data['settingNum']
+        encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=email)
+        encryptionAlgorithm.choice = settingNum
+        encryptionAlgorithm.save()
+        return Response('ok', status=status.HTTP_200_OK)

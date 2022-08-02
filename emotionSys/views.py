@@ -23,7 +23,7 @@ from requests import Response
 from rest_framework import status
 from rest_framework.utils import json
 
-from emotionSys.models import User, AuthSms, Auth_Category, AuthEmail, Emotion  # , User_Security, Security
+from emotionSys.models import User, AuthSms, Auth_Category, AuthEmail, Emotion, EncryptionAlgorithm, ChoiceCheck  # , User_Security, Security
 from my_settings import EMAIL
 
 
@@ -57,7 +57,7 @@ def dashBoard(request):
     try:
         user = User.objects.get(email=user)
 
-        if user.type == 'admin':
+        if user.type == 1:
             auth_category = Auth_Category.objects.all()
 
             print(auth_category)
@@ -300,31 +300,40 @@ def v2_main(request):
 
             return render(request, 'index.html', {'username': request.session.get('userName'), 'type': request.session.get('type')})
 
-
 def v2_userManager(request):
     request.method == 'GET'
     # Mongo 클라이언트 생성
-
     client1 = mongo.MongoClient()
-
-
-    # 데이터베이스를 생성 혹은 지정
     dbs = client1.log
-    id = request.session.get("user_email")
     #로그 기록 찍기
+    id = request.session.get("user_email")
+    DBEmotion = dbs[id]
     gps = request.GET.get('gps')
     device = request.GET.get('device')
-    client1 = mongo.MongoClient()
-    dbs = client1.log
-    DBLog = dbs[id]
     data = {"log": "userManager", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
-
-    DBEmotion = dbs[id]
-
     DBEmotion.insert_one(data)
-    result = User.objects.all()
-    print(result[0].email)
-    return render(request, 'userManager.html', {'data': result, 'username': request.session.get('userName'), 'type': request.session.get('type')})
+
+    # 유저가 없는 경우 메인 화면으로 보냄
+    try:
+        users = User.objects.all()
+    except User.DoesNotExist:
+        return render(request, 'index.html', {'error': 'No signIn'})
+
+    # 첫 번째 유저의 추가 인증 수단이 설정되지 않은 경우 메인 화면으로 보냄 (검토 필요)
+    try:
+        choiceCheck = ChoiceCheck.objects.get(email=users[0].email)
+    except ChoiceCheck.DoesNotExist:
+        return render(request, 'index.html', {'error': 'No signIn'})
+
+    # 첫 번째 유저의 암호화 알고리즘이 설정되지 않은 경우 메인 화면으로 보냄 (검토 필요)
+    try:
+        encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=users[0].email)
+    except EncryptionAlgorithm.DoesNotExist:
+        return render(request, 'index.html', {'error': 'No signIn'})
+
+
+
+    return render(request, 'userManager.html', {'username': request.session.get('userName'), 'type': request.session.get('type'),"users":users,"initialization":[choiceCheck.choice,encryptionAlgorithm.choice]})
 
 
 
@@ -441,7 +450,6 @@ def v2_signIn(request):
 
         user_email = request.POST['user_email']
         user_pw = request.POST['user_pw']
-
 
         try:
             user = User.objects.get(email=user_email, password=user_pw)
@@ -803,7 +811,7 @@ def v2_dashBoard(request):
 
         user = User.objects.get(email=user_email)
 
-        if user.type == 'admin':
+        if user.type == 1:
             auth_category = Auth_Category.objects.all()
 
             client1 = mongo.MongoClient()

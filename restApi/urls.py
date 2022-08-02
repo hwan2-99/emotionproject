@@ -10,5 +10,7 @@ urlpatterns = [
     path('face', views.face, name='face'),  # User에 관한 API를 처리하는 view로 Request를 넘김
     path('v2/face', views.face, name='face'),  # User에 관한 API를 처리하는 view로 Request를 넘김
     path('mypage/emotion', views.mypage_emotion, name="mypage_emotion"),
+    path('choice-check', views.choice_check, name="choice_check"),
+    path('encryption-algorithm', views.encryption_algorithm, name="encryption_algorithm"),
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
 ]
