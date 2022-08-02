@@ -53,8 +53,9 @@ class AESCipher:
 @csrf_exempt
 @api_view(['GET', 'POST'])
 def voice(request):
-    if request.method == "POST":
+    # today = date.today()
 
+    if request.method == "POST":
         # 음성 서버에 저장하는 작업
         audio_file = request.FILES.get('audio_data', None)
 
@@ -71,7 +72,7 @@ def voice(request):
 
         print("hello voice")
         id = request.session.get("user_email")
-        today = date.today()
+
         uuid_name = uuid4().hex
 
         data_json = {
@@ -85,6 +86,7 @@ def voice(request):
         client1 = mongo.MongoClient()
         db = client1.voice
         DBVoice = db[id]
+
         DBVoice.insert_one(data_json)
 
         client2 = mongo.MongoClient()
@@ -113,7 +115,7 @@ def voice(request):
 
 @api_view(['GET','POST'])
 def face(request):
-
+    # today = date.today()
     # id = request.session.get("user")
 
     image = request.POST['faceURL'].split(',')[1]
@@ -122,7 +124,7 @@ def face(request):
 
     id = request.session.get("user_email")
     result = myface(np_data,id)
-    today = date.today()
+
     uuid_name = uuid4().hex
     data_json = {
         "_id": uuid_name,
