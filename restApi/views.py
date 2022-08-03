@@ -90,9 +90,7 @@ def voice(request):
         db = client1.voice
         DBVoice = db[id]
 
-        DBVoice.insert_one({
-            'encryption': encrypted_data
-        })
+        DBVoice.insert_one(data_json)
 
         client2 = mongo.MongoClient()
         db2 = client2.voice_count
@@ -148,9 +146,7 @@ def face(request):
     client1 = mongo.MongoClient()
     db = client1.face
     DBFace = db[id]
-    DBFace.insert_one({
-        'encryption': encrypted_data
-    })
+    DBFace.insert_one(data_json)
 
     if float(request.POST['fearful']) >= 0.2:
         print("fearful Test ~~~~~~~~~~~~~~~~~~")
