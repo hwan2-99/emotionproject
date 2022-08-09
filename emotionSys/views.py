@@ -340,7 +340,6 @@ def v2_userlog(request):
     # Mongo 클라이언트 생성
     client1 = mongo.MongoClient()
 
-
     # 데이터베이스를 생성 혹은 지정
     dbs = client1.log
     id = request.session.get("user_email")
@@ -354,10 +353,9 @@ def v2_userlog(request):
 
     DBEmotion = dbs[id]
 
-    result = DBEmotion.find().sort("date", -1)
+    result = DBEmotion.find().sort("date", -1);
     DBEmotion.insert_one(data);
     return render(request, 'userlog.html', {'data': result, 'username': request.session.get('userName'), 'type': request.session.get('type')})
-
 
 def v2_facelog(request):
     request.method == 'GET'
@@ -366,13 +364,11 @@ def v2_facelog(request):
     client1 = mongo.MongoClient()
     # 데이터베이스를 생성 혹은 지정
     db = client1.face
-
     id = request.session.get("user_email")
-    print(id)
+    # 콜렉션을 지정
     DBFace = db[id]
 
     result = DBFace.find().sort("Date", -1)
-
 
     #로그 기록 찍기
     gps = request.GET.get('gps')
@@ -394,6 +390,8 @@ def v2_voicelog(request):
     DBVoice = db1[id]
 
     result = DBVoice.find().sort("date", -1)
+
+    
 
     client2 = mongo.MongoClient()
     db2 = client2.voice_count
