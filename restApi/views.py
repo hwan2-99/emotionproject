@@ -81,7 +81,9 @@ def voice(request):
             'date': str(datetime.datetime.now())
         }
 
+        # json 데이터 직렬화
         json_data = json.dumps(data_json)
+        # 암호화
         encrypted_data = AESCipher(bytes(key)).encrypt(json_data)
 
         # Mongo 클라이언트 생성
@@ -112,6 +114,7 @@ def voice(request):
             dbfail.insert_one(data)
 
         print(encrypted_data)
+
         return Response({'data': data_json}, status=status.HTTP_200_OK)
 
 @api_view(['GET','POST'])
