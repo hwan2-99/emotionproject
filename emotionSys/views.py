@@ -342,7 +342,6 @@ def v2_userlog(request):
     # Mongo 클라이언트 생성
     client1 = mongo.MongoClient()
 
-
     # 데이터베이스를 생성 혹은 지정
     dbs = client1.log
     id = request.session.get("user_email")
@@ -356,10 +355,9 @@ def v2_userlog(request):
 
     DBEmotion = dbs[id]
 
-    result = DBEmotion.find().sort("date", -1)
+    result = DBEmotion.find().sort("date", -1);
     DBEmotion.insert_one(data);
     return render(request, 'userlog.html', {'data': result, 'username': request.session.get('userName'), 'type': request.session.get('type')})
-
 
 def v2_facelog(request):
     request.method == 'GET'
@@ -368,13 +366,11 @@ def v2_facelog(request):
     client1 = mongo.MongoClient()
     # 데이터베이스를 생성 혹은 지정
     db = client1.face
-
     id = request.session.get("user_email")
-    print(id)
+    # 콜렉션을 지정
     DBFace = db[id]
 
     result = DBFace.find().sort("Date", -1)
-
 
     #로그 기록 찍기
     gps = request.GET.get('gps')
@@ -396,6 +392,8 @@ def v2_voicelog(request):
     DBVoice = db1[id]
 
     result = DBVoice.find().sort("date", -1)
+
+    
 
     client2 = mongo.MongoClient()
     db2 = client2.voice_count
@@ -520,9 +518,9 @@ def v2_emotionlog(request):
 
 def v2_emotionLogDetail(request,method=''):
     client1 = mongo.MongoClient()
-    emotion_db = client1.emotion
-    emotion_collection = emotion_db.emotion
-    result = emotion_collection.find({})
+    emotion_db = client1.emotion  # database 선택
+    emotion_collection = emotion_db.emotion  # collection 선택
+    result = emotion_collection.find({})  # document 모두 조회
     user_email = request.session.get('user_email')
 
     list = []
@@ -530,73 +528,77 @@ def v2_emotionLogDetail(request,method=''):
         face = emotion['face']
         voice = emotion['voice']
         brain = emotion['brain']
+        id = emotion['id']
+        user = emotion['user']
+        create_at = emotion['createAt']
+
         if method == 'Default':
-            list.append({'id':emotion['id'],
-                         'face':emotion['face'],
-                         'voice':emotion['voice'],
-                         'brain':emotion['brain'],
-                         'user':emotion['user'],
-                         'createAt':emotion['createAt'],
-                         'result':emotionDetailDefault(face,voice,brain)
+            list.append({'id': id,
+                         'face': face,
+                         'voice': voice,
+                         'brain': brain,
+                         'user': user,
+                         'createAt': create_at,
+                         'result': emotionDetailDefault(face, voice, brain)
                          })
         if method == 'Fuzzy':
-            list.append({'id':emotion['id'],
-                         'face':emotion['face'],
-                         'voice':emotion['voice'],
-                         'brain':emotion['brain'],
-                         'user':emotion['user'],
-                         'createAt':emotion['createAt'],
-                         'result':emotionDetailFuzzy(face,voice,brain)
+            list.append({'id': id,
+                         'face': face,
+                         'voice': voice,
+                         'brain': brain,
+                         'user': user,
+                         'createAt': create_at,
+                         'result': emotionDetailFuzzy(face, voice, brain)
                          })
         if method == 'Maut':
-            list.append({'id':emotion['id'],
-                         'face':emotion['face'],
-                         'voice':emotion['voice'],
-                         'brain':emotion['brain'],
-                         'user':emotion['user'],
-                         'createAt':emotion['createAt'],
-                         'result':emotionDetailMaut(face,voice,brain)
+            list.append({'id': id,
+                         'face': face,
+                         'voice': voice,
+                         'brain': brain,
+                         'user': user,
+                         'createAt': create_at,
+                         'result': emotionDetailMaut(face, voice, brain)
                          })
         if method == 'Graph':
-            list.append({'id':emotion['id'],
-                         'face':emotion['face'],
-                         'voice':emotion['voice'],
-                         'brain':emotion['brain'],
-                         'user':emotion['user'],
-                         'createAt':emotion['createAt'],
-                         'result':False
+            list.append({'id': id,
+                         'face': face,
+                         'voice': voice,
+                         'brain': brain,
+                         'user': user,
+                         'createAt': create_at,
+                         'result': False
                          })
 
     return render(request, 'userEmotion'+method+'.html',
                   {'result': list,
                    'data': request.session.get('userName'),
                    'user': user_email,
-                   'field':user_email,
+                   'field': user_email,
                    'username': request.session.get('userName'),
                    'type': request.session.get('type')
                    })
 
 def emotionDetailDefault(face,voice,brain):
     cnt = 0;
-    if (face >= 0.5):
+    if face >= 0.5:
         cnt = cnt + 1
-    if (voice >= 0.5):
+    if voice >= 0.5:
         cnt = cnt + 1
-    if (brain >= 0.5):
+    if brain >= 0.5:
         cnt = cnt + 1
-    if (cnt > 2):
+    if cnt > 2:
         return True
     else:
         return False
 
 def emotionDetailFuzzy(face,voice,brain):
-    if (face >= 0.7 and voice >= 0.7 and brain >= 0.7):
+    if face >= 0.7 and voice >= 0.7 and brain >= 0.7:
         return True
     else:
         return False
 
 def emotionDetailMaut(face,voice,brain):
-    if (face * 0.3 + voice * 0.3 + brain * 0.4 > 0.8):
+    if face * 0.3 + voice * 0.3 + brain * 0.4 > 0.8:
         return True
     else:
         return False
@@ -792,7 +794,6 @@ class v2_phoneCheck(View):
         else:
             print('fail')
             return render(request, 'check.html')
-
 
 # def v2_locateCheck(request):
 #     if request.method == 'GET':
