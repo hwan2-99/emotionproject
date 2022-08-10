@@ -9,7 +9,7 @@ import base64
 import pymongo as mongo
 import json
 from datetime import date
-
+from datetime import datetime
 from uuid import uuid4
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
@@ -54,6 +54,8 @@ class AESCipher:
 @api_view(['GET', 'POST'])
 def voice(request):
     # today = date.today()
+
+    encrypt_startTime = datetime.now()
 
     if request.method == "POST":
         # 음성 서버에 저장하는 작업
@@ -119,6 +121,10 @@ def voice(request):
             dbfail.insert_one(data)
 
         print(encrypted_data)
+        encrypt_endTime = datetime.now()
+
+        encrypt_Time = encrypt_endTime - encrypt_startTime
+
 
         return Response({'data': data_json}, status=status.HTTP_200_OK)
 
@@ -156,6 +162,9 @@ def face(request):
         "encrypted_data": encrypted_data,
         "Date": data_json['Date']
     })
+
+    f = open("timeLog.txt", 'w')
+    f.close()
 
     if float(request.POST['fearful']) >= 0.2:
         print("fearful Test ~~~~~~~~~~~~~~~~~~")
