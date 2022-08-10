@@ -46,7 +46,6 @@ class AESCipher:
         cipher = AES.new(self.key, AES.MODE_CBC, iv )
         return unpad(cipher.decrypt( enc[16:] ))
 
-
 @csrf_exempt
 @api_view(['GET', 'POST'])
 def voice(request):
