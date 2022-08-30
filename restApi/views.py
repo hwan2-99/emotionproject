@@ -9,7 +9,7 @@ import base64
 import pymongo as mongo
 import json
 from datetime import date
-from datetime import datetime
+#from datetime import datetime
 from uuid import uuid4
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
@@ -26,6 +26,8 @@ from emotionSys.models import User, AuthSms, Auth_Category, AuthEmail, Emotion, 
 from Crypto.Cipher import Salsa20
 from Crypto import Random
 from Crypto.Cipher import AES
+
+adminEmail = 'admin@gmail.com'
 
 key = [0x10, 0x01, 0x15, 0x1B, 0xA1, 0x11, 0x57, 0x72, 0x6C, 0x21, 0x56, 0x57, 0x62, 0x16, 0x05, 0x3D,
         0xFF, 0xFE, 0x11, 0x1B, 0x21, 0x31, 0x57, 0x72, 0x6B, 0x21, 0xA6, 0xA7, 0x6E, 0xE6, 0xE5, 0x3F]
@@ -54,9 +56,10 @@ class AESCipher:
 def voice(request):
     # today = date.today()
 
-    encrypt_startTime = datetime.now()
+    #encrypt_startTime = datetime.now()
 
     if request.method == "POST":
+
         # 음성 서버에 저장하는 작업
         audio_file = request.FILES.get('audio_data', None)
 
@@ -93,10 +96,7 @@ def voice(request):
         db = client1.voice
         DBVoice = db[id]
 
-        DBVoice.insert_one({
-            'encrypted_data': encrypted_data,
-            'date': data_json['date']
-        })
+        DBVoice.insert_one(data_json)
 
         client2 = mongo.MongoClient()
         db2 = client2.voice_count
@@ -120,9 +120,9 @@ def voice(request):
             dbfail.insert_one(data)
 
         print(encrypted_data)
-        encrypt_endTime = datetime.now()
+        #encrypt_endTime = datetime.now()
 
-        encrypt_Time = encrypt_endTime - encrypt_startTime
+        #encrypt_Time = encrypt_endTime - encrypt_startTime
 
 
         return Response({'data': data_json}, status=status.HTTP_200_OK)
@@ -157,10 +157,7 @@ def face(request):
     client1 = mongo.MongoClient()
     db = client1.face
     DBFace = db[id]
-    DBFace.insert_one({
-        "encrypted_data": encrypted_data,
-        "Date": data_json['Date']
-    })
+    DBFace.insert_one(data_json)
 
     f = open("timeLog.txt", 'w')
     f.close()
@@ -203,7 +200,7 @@ def choice_check(request):
 
         return Response(choiceCheck.choice, status=status.HTTP_200_OK)
 
-    if request.method == "PATCH":
+    if request.method == "PATCH" and adminEmail == request.session.get("user_email"):
         email = request.data['email']
         settingNum = request.data['settingNum']
         choiceCheck = ChoiceCheck.objects.get(email=email)
@@ -218,7 +215,7 @@ def encryption_algorithm(request):
         encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=email)
         return Response(encryptionAlgorithm.choice, status=status.HTTP_200_OK)
 
-    if request.method == "PATCH":
+    if request.method == "PATCH" and adminEmail == request.session.get("user_email"):
         email = request.data['email']
         settingNum = request.data['settingNum']
         encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=email)
