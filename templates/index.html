@@ -25,7 +25,6 @@
 </head>
 <script>
     let detectTF = false;
-
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -357,18 +356,35 @@
             var data = detections[0].expressions.fearful;
             console.log(parseFloat(data).toFixed(8));
 
+
+
             const canvas = document.getElementById("canvas_video");
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             canvas.getContext("2d").drawImage(video, 0, 0,canvas.width, canvas.height);
             const dataURL = canvas.toDataURL();
-            var fd=new FormData();
-            fd.append("faceURL", dataURL)
-            fd.append("neutral", parseFloat(detections[0].expressions.neutral).toFixed(8));
-            fd.append("happy", parseFloat(detections[0].expressions.happy).toFixed(8));
-            fd.append("angry", parseFloat(detections[0].expressions.angry).toFixed(8));
-            fd.append("sad", parseFloat(detections[0].expressions.sad).toFixed(8));
-            fd.append("fearful", parseFloat(detections[0].expressions.fearful).toFixed(8));
+            var fd = new FormData();
+
+            {% if encryption_algorithm == 1 %}
+                fd.append("faceURL", dataURL)
+                fd.append("neutral", parseFloat(detections[0].expressions.neutral).toFixed(8));
+                fd.append("happy", parseFloat(detections[0].expressions.happy).toFixed(8));
+                fd.append("angry", parseFloat(detections[0].expressions.angry).toFixed(8));
+                fd.append("sad", parseFloat(detections[0].expressions.sad).toFixed(8));
+                fd.append("fearful", parseFloat(detections[0].expressions.fearful).toFixed(8));
+                fd.append("startTime", new Date().getTime());
+            {% endif %}
+            {% if encryption_algorithm == 2 %}
+                fd.append("faceURL", dataURL)
+                fd.append("neutral", parseFloat(detections[0].expressions.neutral).toFixed(8));
+                fd.append("happy", parseFloat(detections[0].expressions.happy).toFixed(8));
+                fd.append("angry", parseFloat(detections[0].expressions.angry).toFixed(8));
+                fd.append("sad", parseFloat(detections[0].expressions.sad).toFixed(8));
+                fd.append("fearful", parseFloat(detections[0].expressions.fearful).toFixed(8));
+                fd.append("startTime", new Date().getTime());
+            {% endif %}
+
+
             $.ajax({
                 headers: {'X-CSRFToken': csrftoken},
                 type : 'POST',
