@@ -25,33 +25,8 @@ from rest_framework.utils import json
 
 from emotionSys.models import User, AuthSms, Auth_Category, AuthEmail, Emotion, EncryptionAlgorithm, ChoiceCheck  # , User_Security, Security
 from my_settings import EMAIL
-#
-from Crypto.Cipher import Salsa20
-from Crypto import Random
-from Crypto.Cipher import AES
 
-key = [0x10, 0x01, 0x15, 0x1B, 0xA1, 0x11, 0x57, 0x72, 0x6C, 0x21, 0x56, 0x57, 0x62, 0x16, 0x05, 0x3D,
-        0xFF, 0xFE, 0x11, 0x1B, 0x21, 0x31, 0x57, 0x72, 0x6B, 0x21, 0xA6, 0xA7, 0x6E, 0xE6, 0xE5, 0x3F]
-BS = 16
-pad = lambda s: s + (BS - len(s.encode('utf-8')) % BS) * chr(BS - len(s.encode('utf-8')) % BS)
-unpad = lambda s : s[:-ord(s[len(s)-1:])]
-
-class AESCipher:
-    def __init__( self, key ):
-        self.key = key
-
-    def encrypt( self, raw ):
-        raw = pad(raw)
-        iv = Random.new().read( AES.block_size )
-        cipher = AES.new( self.key, AES.MODE_CBC, iv )
-        return base64.b64encode( iv + cipher.encrypt( raw.encode('utf-8') ) )
-
-    def decrypt( self, enc ):
-        enc = base64.b64decode(enc)
-        iv = enc[:16]
-        cipher = AES.new(self.key, AES.MODE_CBC, iv )
-        return unpad(cipher.decrypt( enc[16:] ))
-
+from Crypto.PublicKey import RSA
 
 def main(request):
 
@@ -311,7 +286,6 @@ def v2_main(request):
     if request.method == 'GET':
 
         user_email = request.session.get('user_email')
-
         gps = request.GET.get('gps')
         device = request.GET.get('device')
         client1 = mongo.MongoClient()
@@ -321,10 +295,37 @@ def v2_main(request):
 
         if user_email is None:
             return render(request, 'index.html')
-
         else:
+            encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=user_email).choice
 
-            return render(request, 'index.html', {'username': request.session.get('userName'), 'type': request.session.get('type')})
+            if encryptionAlgorithm == 1:  # 대칭키 (미구현)
+                return render(request, 'index.html',
+                              {'encryption_algorithm': encryptionAlgorithm,
+                               'username': request.session.get('userName'),
+                               'type': request.session.get('type')
+                               })
+            elif encryptionAlgorithm == 2:  # 비대칭키
+                # 서버가 데이터를 받을 때 사용할 키 -> 세션에 저장
+                key = RSA.generate(1024)
+                request.session['receive_key'] = str(key.exportKey('PEM').decode("utf-8"))
+                # 퍼블릭 키 얻기
+                public_key = key.public_key()
+                # 퍼블릭 키 문자열로 변환하기
+                public_key_string = public_key.exportKey('PEM').decode("utf-8")
+
+                # 서버가 데이터를 보낼 때 사용할 키 -> 세션에 저장
+                key = RSA.generate(1024)
+                request.session['send_key'] = str(key.exportKey('PEM').decode("utf-8"))
+                # 프라이빗 키 문자열로 변환하기
+                private_key_string = key.exportKey('PEM').decode("utf-8")
+
+                return render(request, 'index.html',
+                              {'encryption_algorithm': encryptionAlgorithm,
+                               'public_key': public_key_string,
+                               'private_key': private_key_string,
+                               'username': request.session.get('userName'),
+                               'type': request.session.get('type')
+                               })
 
 def v2_userManager(request):
     request.method == 'GET'
@@ -397,24 +398,26 @@ def v2_facelog(request):
     DBFace = db[id]
 
     result = DBFace.find().sort("Date", -1)
-    result = list(result)
-
-    for index, item in enumerate(result):
-        encrypted_data = item['encrypted_data']
-        decrypted_data = AESCipher(bytes(key)).decrypt(encrypted_data)
-        decrypted_data.decode('utf-8')
-        decrypted_data = json.loads(decrypted_data)
-
-        result[index] = {
-            "_id": item['_id'],
-            "neutral": decrypted_data['neutral'],
-            "happy": decrypted_data['happy'],
-            "angry": decrypted_data['angry'],
-            "sad": decrypted_data['sad'],
-            "fearful": decrypted_data['fearful'],
-            "Date": item['Date']
-        }
-
+    ### 대칭키 복호화의 경우 ###
+    # #리스트로 변환
+    # result = list(result)
+    #
+    # # rsult리스트의 데이터들을 복호화 함
+    # for index, item in enumerate(result):
+    #     encrypted_data = item['encrypted_data']
+    #     decrypted_data = AESCipher(bytes(key)).decrypt(encrypted_data)
+    #     decrypted_data.decode('utf-8')
+    #     decrypted_data = json.loads(decrypted_data)
+    #     result[index] = {
+    #         "_id": item['_id'],
+    #         "neutral": decrypted_data['neutral'],
+    #         "happy": decrypted_data['happy'],
+    #         "angry": decrypted_data['angry'],
+    #         "sad": decrypted_data['sad'],
+    #         "fearful": decrypted_data['fearful'],
+    #         "Date": item['Date']
+    #     }
+    ######
     #로그 기록 찍기
     gps = request.GET.get('gps')
     device = request.GET.get('device')
@@ -435,22 +438,23 @@ def v2_voicelog(request):
     DBVoice = db1[id]
 
     result = DBVoice.find().sort("date", -1)
-    result = list(result)
-
-    for index, item in enumerate(result):
-        encrypted_data = item['encrypted_data']
-        decrypted_data = AESCipher(bytes(key)).decrypt(encrypted_data)
-        decrypted_data.decode('utf-8')
-        decrypted_data = json.loads(decrypted_data)
-
-        result[index] = {
-            '_id': item['_id'],
-            'positive': decrypted_data['positive'],
-            'negative': decrypted_data['negative'],
-            'date': item['date']
-        }
-
-
+    ### 대칭키 복호화의 경우 ###
+    # #리스트로 변환
+    # result = list(result)
+    #
+    # # rsult리스트의 데이터들을 복호화 함
+    # for index, item in enumerate(result):
+    #     encrypted_data = item['encrypted_data']
+    #     decrypted_data = AESCipher(bytes(key)).decrypt(encrypted_data)
+    #     decrypted_data.decode('utf-8')
+    #     decrypted_data = json.loads(decrypted_data)
+    #
+    #     result[index] = {
+    #         '_id': item['_id'],
+    #         'positive': decrypted_data['positive'],
+    #         'negative': decrypted_data['negative'],
+    #         'date': item['date']
+    #     }
 
     client2 = mongo.MongoClient()
     db2 = client2.voice_count

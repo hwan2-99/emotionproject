@@ -17,11 +17,12 @@
     <script src='{% static "assets/js/jquery.min.js" %}'></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js" integrity="sha384-b5kHyXgcpbZJO/tY9Ul7kGkf1S0CWuKcCD38l8YkeH8z8QjE0GmW1gYU5S9FOnJ0" crossorigin="anonymous"></script>
-
     <script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
     <script src='{% static "assets/js/app.js" %}'></script>
-
     <script src='{% static "assets/js/face-api.min.js" %}'></script>
+    <!-- 암복호화 라이브러리 -->
+    <script src='{% static "assets/js/jsencrypt.min.js" %}'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <script>
     let detectTF = false;
@@ -181,6 +182,10 @@
                                          <script>
                                             detectTF = true;
                                             setInterval(function () {
+                                                setPublicKey(`
+                                                {{ public_key }}
+                                                `)
+
                                                 startRecording();
                                                 setTimeout(stopRecording, 5000);
                                             }, 10000);
@@ -356,8 +361,6 @@
             var data = detections[0].expressions.fearful;
             console.log(parseFloat(data).toFixed(8));
 
-
-
             const canvas = document.getElementById("canvas_video");
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
@@ -375,6 +378,13 @@
                 fd.append("startTime", new Date().getTime());
             {% endif %}
             {% if encryption_algorithm == 2 %}
+                // 객체 생성
+                var crypt = new JSEncrypt();
+                // 키 설정
+                crypt.setPrivateKey('{{ public_key }}');
+                // 암호화
+                var encryptedText = crypt.encrypt('test');
+
                 fd.append("faceURL", dataURL)
                 fd.append("neutral", parseFloat(detections[0].expressions.neutral).toFixed(8));
                 fd.append("happy", parseFloat(detections[0].expressions.happy).toFixed(8));
@@ -382,8 +392,8 @@
                 fd.append("sad", parseFloat(detections[0].expressions.sad).toFixed(8));
                 fd.append("fearful", parseFloat(detections[0].expressions.fearful).toFixed(8));
                 fd.append("startTime", new Date().getTime());
+                fd.append("encryptedText", encryptedText);
             {% endif %}
-
 
             $.ajax({
                 headers: {'X-CSRFToken': csrftoken},
@@ -405,6 +415,7 @@
                    alert("측정 오류. 기존 페이지를 유지합니다.")
                 }
             });
+
 
           }, 10000);
         document.getElementById("face_loading").style.display = 'none';

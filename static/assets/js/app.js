@@ -9,6 +9,12 @@ var input; 							//MediaStreamAudioSourceNode we'll be recording
 var AudioContext = window.AudioContext || window.webkitAudioContext;
 var audioContext //audio context to help us record
 
+var public_key;
+
+function setPublicKey(key){
+	public_key = key;
+}
+
 function startRecording() {
 	console.log("recordButton clicked");
 
@@ -50,8 +56,7 @@ function stopRecording() {
 	rec.exportWAV(createDownloadLink);
 }
 
-function createDownloadLink(blob) {
-	console.log()
+async function createDownloadLink(blob) {
 	var url = URL.createObjectURL(blob);
 	var au = document.createElement('audio');
 	var li = document.createElement('li');
@@ -69,28 +74,59 @@ function createDownloadLink(blob) {
 	upload.href="#";
 	upload.innerHTML = "Upload";
 	var xhr=new XMLHttpRequest();
-	var fd=new FormData();
+	var fd = new FormData();
 	console.log("목소리")
-	fd.append("audio_data", blob, filename);
 
-	$.ajax({
-			headers: {'X-CSRFToken': csrftoken},
-            type : 'POST',
-            url : '/v2/voice',
-            data : fd,
-            dataType: 'json',
-            processData: false,    // 반드시 작성
-            contentType: false,    // 반드시 작성
-            success : function(result){
-                if(result.data.negative > 0.4) {
-                    alert("이상 징후가 감지되었습니다. 추가인증을 해주세요..")
-                    window.location.href = '/v2/fail';
-                }
-            },
-            error : function(xtr,status,error){-
-               alert("측정 오류. 기존 페이지를 유지합니다.")
-            }
-        });
+	//blob.arrayBuffer()
+	//await new Response(blob).text()
+	let reader = new FileReader();
+	reader.onload = async function(){
+		// 암호화 대상 메시지
+		var plainText = reader.result.split(',')[1];
 
-	document.getElementById("voice_loading").style.display = 'none';
+		// 대칭 암호화 - JS ENCRYPTION ECB
+		var key_string = Math.random().toString(36).substring(2, 12);
+		key_string = 'wk3m3ljc66'
+		key = CryptoJS.enc.Utf8.parse(key_string); // 대칭 키
+
+		var encrypted = CryptoJS.AES.encrypt(plainText, key, {mode: CryptoJS.mode.ECB});
+		encrypted = encrypted.toString();
+
+		// 비대칭 암호화
+		var crypt = new JSEncrypt();
+		crypt.setPrivateKey(public_key);// 비대칭 키 설정
+		// 암호화
+		var encrypted_key = crypt.encrypt(key_string);
+
+		//
+		console.log('public_key는 ',public_key)
+		console.log('encrypted_key는 ',encrypted_key)
+
+		fd.append("test",encrypted)
+		fd.append("encrypted_key",encrypted_key);
+		//
+		fd.append("audio_data", blob, filename);
+		fd.append("startTime", new Date().getTime());
+		$.ajax({
+				headers: {'X-CSRFToken': csrftoken},
+				type : 'POST',
+				url : '/v2/voice',
+				data : fd,
+				dataType: 'json',
+				processData: false,    // 반드시 작성
+				contentType: false,    // 반드시 작성
+				success : function(result){
+					if(result.data.negative > 0.4) {
+						alert("이상 징후가 감지되었습니다. 추가인증을 해주세요..")
+						window.location.href = '/v2/fail';
+					}
+				},
+				error : function(xtr,status,error){-
+				   alert("측정 오류. 기존 페이지를 유지합니다.")
+				}
+		});
+		document.getElementById("voice_loading").style.display = 'none';
+	}
+
+	await reader.readAsDataURL(blob);
 }

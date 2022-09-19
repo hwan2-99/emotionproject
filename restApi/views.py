@@ -1,5 +1,7 @@
 import json
+from builtins import str
 
+import uuid as uuid
 from django.shortcuts import render
 
 # Create your views here.
@@ -23,33 +25,56 @@ from faceEmotion.face import faceEmotion
 # sqlite3 모델들
 from emotionSys.models import User, AuthSms, Auth_Category, AuthEmail, Emotion, EncryptionAlgorithm, ChoiceCheck
 
-from Crypto.Cipher import Salsa20
-from Crypto import Random
 from Crypto.Cipher import AES
+
+# 암복호화 관련
+import Crypto
+from Crypto.Cipher import PKCS1_OAEP
+from Crypto.PublicKey import RSA
+from Crypto import Random
+import ast
+import zlib
+
+import base64
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad,unpad
+
+# 로그 파일 생성 작업용
+import time
+import uuid
 
 adminEmail = 'admin@gmail.com'
 
 key = [0x10, 0x01, 0x15, 0x1B, 0xA1, 0x11, 0x57, 0x72, 0x6C, 0x21, 0x56, 0x57, 0x62, 0x16, 0x05, 0x3D,
         0xFF, 0xFE, 0x11, 0x1B, 0x21, 0x31, 0x57, 0x72, 0x6B, 0x21, 0xA6, 0xA7, 0x6E, 0xE6, 0xE5, 0x3F]
-BS = 16
-pad = lambda s: s + (BS - len(s.encode('utf-8')) % BS) * chr(BS - len(s.encode('utf-8')) % BS)
-unpad = lambda s : s[:-ord(s[len(s)-1:])]
 
-class AESCipher:
-    def __init__( self, key ):
-        self.key = key
+# BS = 16
+# pad = lambda s: s + (BS - len(s.encode('utf-8')) % BS) * chr(BS - len(s.encode('utf-8')) % BS)
+# unpad = lambda s : s[:-ord(s[len(s)-1:])]
+#
+#
+# class AESCipher:
+#     def __init__( self, key ):
+#         self.key = key
+#
+#     def encrypt( self, raw ):
+#         raw = pad(raw)
+#         iv = Random.new().read( AES.block_size )
+#         cipher = AES.new( self.key, AES.MODE_CBC, iv )
+#         return base64.b64encode( iv + cipher.encrypt( raw.encode('utf-8') ) )
+#
+#     def decrypt( self, enc ):
+#         enc = base64.b64decode(enc)
+#         iv = enc[:16]
+#         cipher = AES.new(self.key, AES.MODE_CBC, iv )
+#         return unpad(cipher.decrypt( enc[16:] ))
 
-    def encrypt( self, raw ):
-        raw = pad(raw)
-        iv = Random.new().read( AES.block_size )
-        cipher = AES.new( self.key, AES.MODE_CBC, iv )
-        return base64.b64encode( iv + cipher.encrypt( raw.encode('utf-8') ) )
 
-    def decrypt( self, enc ):
-        enc = base64.b64decode(enc)
-        iv = enc[:16]
-        cipher = AES.new(self.key, AES.MODE_CBC, iv )
-        return unpad(cipher.decrypt( enc[16:] ))
+def symmetric_decrypt(enc, symmetrical_key):
+    enc = base64.b64decode(enc)
+    cipher = AES.new(symmetrical_key.encode('utf-8'), AES.MODE_ECB)
+    return unpad(cipher.decrypt(enc), 16)
+
 
 @csrf_exempt
 @api_view(['GET', 'POST'])
@@ -59,18 +84,75 @@ def voice(request):
     #encrypt_startTime = datetime.now()
 
     if request.method == "POST":
+        # nchannels = 1
+        # sampwidth = 1
+        # framerate = 8000
+        # nframes = 1
+        #
+        # name = 'output.wav'
+        # audio = wave.open(name, 'wb')
+        # audio.setnchannels(nchannels)
+        # audio.setsampwidth(sampwidth)
+        # audio.setframerate(framerate)
+        # audio.setnframes(nframes)
+        # blob = open("original.wav").read()  # such as `blob.read()`
+        # audio.writeframes(blob)
+
+        # 로그 파일 생성
+        index = uuid.uuid4()
+        userEmail = request.session.get('user_email')
+        dataType = 'audio_data'
+        startTime = int(request.POST['startTime'])  # 시작 시간
+        endTime = int(time.time()*1000)  # 끝 시간
+        timeGap = endTime-startTime
+        encryption_algorithm = 'RSA'
+        with open('voiceLog.txt', 'a') as f:
+            f.write(str(index)+"|"+str(userEmail)+"|"+str(dataType)+"|"+str(startTime)+"|"+str(endTime)+"|"+str(timeGap)+"|"+str(encryption_algorithm)+"\n")
 
         # 음성 서버에 저장하는 작업
-        audio_file = request.FILES.get('audio_data', None)
+        #audio_file = request.FILES.get('audio_data', None)
+        encrypted = request.POST['test']
+        encrypted_key = request.POST['encrypted_key']
+        print('encrypted_key',encrypted_key)
 
-        obj = wave.open(audio_file, 'r')
+        key = RSA.import_key(request.session.get('receive_key'))
+        print('열쇠는',request.session.get('receive_key'))
+        decryptor = PKCS1_OAEP.new(key)
+
+        zdata = zlib.compress(bytearray(encrypted_key,encoding='utf-8'), -1)
+
+        print('zdata는 ',zdata)
+        print('비교용',b'\xa6\\\xdd\xe8\xce\xf7%\tK\x03\xcc\xae\xdd!~\x9b1\x1e\xc6\x01\x02\xbf{\x04\xfe\xfa2H9-O\x0en\xa5_\xc7Ss\xed\xe8\nd\xdc\x83\xa7\xcb\xfa\xe9L\x1c\x06\x0fO[\xad\x1ad"\xe7\xff/\xe5\xcb\x88\xbc[\xbf\xa7QU\xb9\xb1\x88#z\xb7\x1a\\F\xaf\x8e^\x80\xd5`\xac(N\x87\x9e+\x95n\xb3\xf6\x90\xf3\xdc,\x15\xcd\xe6}\xef\x85\xdal\x16\x15\x85.<A\x93L\xcf_t%\xd8R\xb1;\xc0\x10\x11!\xec')
+        decrypted = decryptor.decrypt(ast.literal_eval(str(zdata)))
+        print('복호화!!', str(decrypted))
+
+        symmetrical_key = 'AAAAAAAAAAAAAAAA'
+        decrypted = symmetric_decrypt(bytes(encrypted,'utf-8'), symmetrical_key)
+        encode_string = decrypted.decode("utf-8", "ignore")
+        decode_byte = base64.b64decode(encode_string)
+
+        with open("temp.wav", "wb") as wav_file:
+            wav_file.write(decode_byte)
+
+        #obj = wave.open(audio_file, 'r')
+        wav_file = open("temp.wav", "rb")
+        wf = wave.open(wav_file, 'r')
+
         audio = wave.open('voiceEmotion/test.wav', 'wb')
-        audio.setnchannels(obj.getnchannels())
-        audio.setnframes(obj.getnframes())
-        audio.setsampwidth(obj.getsampwidth())
-        audio.setframerate(obj.getframerate())
-        blob = audio_file.read()
+        audio.setnchannels(wf.getnchannels())
+        audio.setnframes(wf.getnframes())
+        audio.setsampwidth(wf.getsampwidth())
+        audio.setframerate(wf.getframerate())
+        #blob = audio_file.read()  # bytes타입
+        blob = decode_byte
         audio.writeframes(blob)
+
+        #
+        # with open('test.txt', 'w') as f:
+        #     f.write('원본' + str(blob) + '\n')
+        #
+        with open('test22.txt', 'w') as f:
+            f.write('흉내' + str(decode_byte) + '\n')
 
         voiceresult = emotionCheck()
 
@@ -86,10 +168,10 @@ def voice(request):
             'date': str(datetime.datetime.now())
         }
 
-        # json 데이터 직렬화
-        json_data = json.dumps(data_json)
-        # 암호화
-        encrypted_data = AESCipher(bytes(key)).encrypt(json_data)
+        # # json 데이터 직렬화
+        # json_data = json.dumps(data_json)
+        # # 암호화
+        # encrypted_data = AESCipher(bytes(key)).encrypt(json_data)
 
         # Mongo 클라이언트 생성
         client1 = mongo.MongoClient()
@@ -119,11 +201,9 @@ def voice(request):
             }
             dbfail.insert_one(data)
 
-        print(encrypted_data)
         #encrypt_endTime = datetime.now()
 
         #encrypt_Time = encrypt_endTime - encrypt_startTime
-
 
         return Response({'data': data_json}, status=status.HTTP_200_OK)
 
@@ -131,6 +211,18 @@ def voice(request):
 def face(request):
     # today = date.today()
     # id = request.session.get("user")
+    
+    #복호화
+
+    print('받는키', request.session.get('receive_key'))
+    print('받는키 타입', type(  request.session.get('receive_key')     )    )
+
+    # key = RSA.import_key(request.session.get('receive_key'))
+    # encryptedText = request.POST['encryptedText']
+    # decryptor = PKCS1_OAEP.new(key)
+    # decrypted = decryptor.decrypt(ast.literal_eval(str(encryptedText)))
+    # print('복호화!!', str(decrypted))
+
 
     image = request.POST['faceURL'].split(',')[1]
     decoded_data = base64.b64decode(image)
