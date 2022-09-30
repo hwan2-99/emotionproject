@@ -11,3 +11,11 @@ https://192.168.64.1:8000/adminemotionSys/user/
 유저
 abc
 123
+
+user 테이블의 type 속성
+1 - 관리자
+2 - 일반 회원
+
+encryption_algorithm 테이블의 choice 속성
+1 - 대칭키
+2 - 비대칭키
