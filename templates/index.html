@@ -24,6 +24,7 @@
     <script src='{% static "assets/js/jsencrypt.min.js" %}'></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
+    {{ type }}다.
 <script>
     let detectTF = false;
     function getCookie(name) {
@@ -178,13 +179,21 @@
                                             &nbsp;
                                             <span class=" d-lg-inline me-2 text-gray-600 small" onclick="location.href='/v2/signOut'">로그아웃</span>
                                         </span>
-                                        {% if type %}
+                                        {% if type != 1 %}
                                          <script>
                                             detectTF = true;
                                             setInterval(function () {
-                                                setPublicKey(`
-                                                {{ public_key }}
-                                                `)
+
+                                                setEncryptionAlgorithm({{ encryption_algorithm }});
+
+                                                {% if encryption_algorithm == 1 %}
+                                                    setSymmetricalKey(`{{ symmetrical_key }}`);
+                                                {% endif %}
+                                                {% if encryption_algorithm == 2 %}
+                                                    setPublicKey(`
+                                                    {{ public_key }}
+                                                    `)
+                                                {% endif %}
 
                                                 startRecording();
                                                 setTimeout(stopRecording, 5000);
@@ -319,7 +328,7 @@
     <script src='{% static "assets/js/app.js" %}'></script>
     <div id="formats"></div>
 
-    {% if type != 1%}
+    {% if type != 1 %}
     <script>
         const video = document.getElementById("video");
 
@@ -368,32 +377,69 @@
             const dataURL = canvas.toDataURL();
             var fd = new FormData();
 
-            {% if encryption_algorithm == 1 %}
-                fd.append("faceURL", dataURL)
-                fd.append("neutral", parseFloat(detections[0].expressions.neutral).toFixed(8));
-                fd.append("happy", parseFloat(detections[0].expressions.happy).toFixed(8));
-                fd.append("angry", parseFloat(detections[0].expressions.angry).toFixed(8));
-                fd.append("sad", parseFloat(detections[0].expressions.sad).toFixed(8));
-                fd.append("fearful", parseFloat(detections[0].expressions.fearful).toFixed(8));
-                fd.append("startTime", new Date().getTime());
-            {% endif %}
-            {% if encryption_algorithm == 2 %}
-                // 객체 생성
+            /** original data description
+
+            base64 encoded string
+            fd.append("faceURL", dataURL);
+
+             float string
+            fd.append("neutral", parseFloat(detections[0].expressions.neutral).toFixed(8));
+            fd.append("happy", parseFloat(detections[0].expressions.happy).toFixed(8));
+            fd.append("angry", parseFloat(detections[0].expressions.angry).toFixed(8));
+            fd.append("sad", parseFloat(detections[0].expressions.sad).toFixed(8));
+            fd.append("fearful", parseFloat(detections[0].expressions.fearful).toFixed(8));
+            fd.append("startTime", new Date().getTime());
+
+            */
+
+            // 암호화 대상 데이터
+            let faceURL = dataURL;
+            let neutral = parseFloat(detections[0].expressions.neutral).toFixed(8);
+            let happy = parseFloat(detections[0].expressions.happy).toFixed(8);
+            let angry = parseFloat(detections[0].expressions.angry).toFixed(8);
+            let sad = parseFloat(detections[0].expressions.sad).toFixed(8);
+            let fearful = parseFloat(detections[0].expressions.fearful).toFixed(8);
+            let startTime = new Date().getTime();
+
+            // 대칭키 발급
+            let key_string;
+            if( '{{ encryption_algorithm }}' == '1' ){
+			    key_string = '{{ symmetrical_key }}';
+		    }else if( '{{ encryption_algorithm }}' == '2'){
+			    key_string = Math.random().toString(36).substring(2, 12) + new Date().getTime().toString(36).substring(2);
+            }else{
+			    throw new Error('encryption_algorithm is required');
+		    }
+            // 대칭 암호화 - JS ENCRYPTION ECB
+		    key = CryptoJS.enc.Utf8.parse(key_string); // 대칭 키
+		    faceURL = CryptoJS.AES.encrypt(faceURL, key, {mode: CryptoJS.mode.ECB}).toString();
+            neutral = CryptoJS.AES.encrypt(neutral, key, {mode: CryptoJS.mode.ECB}).toString();
+            happy = CryptoJS.AES.encrypt(happy, key, {mode: CryptoJS.mode.ECB}).toString();
+            angry = CryptoJS.AES.encrypt(angry, key, {mode: CryptoJS.mode.ECB}).toString();
+            sad = CryptoJS.AES.encrypt(sad, key, {mode: CryptoJS.mode.ECB}).toString();
+            fearful = CryptoJS.AES.encrypt(fearful, key, {mode: CryptoJS.mode.ECB}).toString();
+            startTime = CryptoJS.AES.encrypt(startTime.toString(), key, {mode: CryptoJS.mode.ECB}).toString();
+
+            if('{{ encryption_algorithm }}' == '1'){
+			    // nothing to do...
+		    }else if('{{ encryption_algorithm }}' == '2'){
+                // 비대칭 암호화
                 var crypt = new JSEncrypt();
-                // 키 설정
                 crypt.setPrivateKey('{{ public_key }}');
                 // 암호화
-                var encryptedText = crypt.encrypt('test');
+                var encrypted_key = crypt.encrypt(key_string);
+                fd.append("encrypted_key",encrypted_key);
+            }else{
+                throw new Error('encryption_algorithm is required');
+            }
 
-                fd.append("faceURL", dataURL)
-                fd.append("neutral", parseFloat(detections[0].expressions.neutral).toFixed(8));
-                fd.append("happy", parseFloat(detections[0].expressions.happy).toFixed(8));
-                fd.append("angry", parseFloat(detections[0].expressions.angry).toFixed(8));
-                fd.append("sad", parseFloat(detections[0].expressions.sad).toFixed(8));
-                fd.append("fearful", parseFloat(detections[0].expressions.fearful).toFixed(8));
-                fd.append("startTime", new Date().getTime());
-                fd.append("encryptedText", encryptedText);
-            {% endif %}
+            fd.append("faceURL", faceURL);
+            fd.append("neutral", neutral);
+            fd.append("happy", happy);
+            fd.append("angry", angry);
+            fd.append("sad", sad);
+            fd.append("fearful", fearful);
+            fd.append("startTime", startTime);
 
             $.ajax({
                 headers: {'X-CSRFToken': csrftoken},
