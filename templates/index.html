@@ -24,6 +24,44 @@
     <script src='{% static "assets/js/face-api.min.js" %}'></script>
 </head>
 <script>
+    // ip 이상감지
+    (async () => {
+        var fd = new FormData();
+        let ip;
+        await $.ajax({
+            type: 'GET',
+            url: 'https://api.ip.pe.kr/',
+            success: function (result) {
+                ip = result;
+            },
+            error: function (xtr, status, error) {
+                alert("ip획득 api 오류. 기존 페이지를 유지합니다.");
+                return;
+            }
+        });
+        fd.append("ip", ip);
+        $.ajax({
+            headers: {'X-CSRFToken': csrftoken},
+            type: 'POST',
+            url: '/v2/ip',
+            data: fd,
+            dataType: 'json',
+            processData: false,    // 반드시 작성
+            contentType: false,    // 반드시 작성
+            success: function (result) {
+                if ( !result.validTF ) {
+                    alert("이상 징후가 감지되었습니다. 추가인증을 해주세요...")
+                    window.location.href = '/v2/fail';
+                }else{
+                    console.log('아이피 정상');
+                }
+            },
+            error: function (xtr, status, error) {
+                alert("측정 오류. 기존 페이지를 유지합니다.")
+            }
+        });
+    })();
+
     let detectTF = false;
     function getCookie(name) {
         let cookieValue = null;
@@ -407,6 +445,7 @@
             });
 
           }, 10000);
+
         document.getElementById("face_loading").style.display = 'none';
         //미디어 허용
         if (navigator.mediaDevices.getUserMedia) {
