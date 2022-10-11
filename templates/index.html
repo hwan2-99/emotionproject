@@ -24,6 +24,7 @@
     <script src='{% static "assets/js/face-api.min.js" %}'></script>
 </head>
 <script>
+    {% if type and type != 1 %}
     // ip 이상감지
     (async () => {
         var fd = new FormData();
@@ -61,6 +62,7 @@
             }
         });
     })();
+    {% endif %}
 
     let detectTF = false;
     function getCookie(name) {
