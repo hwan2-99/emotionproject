@@ -26,7 +26,43 @@
 </head>
 <script>
     {% if type and type != 1 %}
-    // ip 이상감지
+        // gps 이상 감지
+        device = navigator.userAgent;
+        var is_mobile = false;
+        if (device.indexOf("iPhone") > -1 || device.indexOf("Android") > -1) {
+            is_mobile = true;
+        }
+        if (is_mobile) { // 모바일만 검사
+            navigator.geolocation.getCurrentPosition(function (position) {
+                gps = position.coords.latitude + ' ' + position.coords.longitude;
+                $.ajax({
+                    type: 'POST',
+                    url: 'v2/gps',
+                    dataType: 'json',
+                    processData: false,    // 반드시 작성
+                    contentType: false,    // 반드시 작성
+                    success: function (result) {
+                        if (!result.validTF) {
+                            alert("GPS 비정상. 추가인증을 해주세요...")
+                            window.location.href = '/v2/fail';
+                        } else {
+                            console.log('GPS 정상');
+                        }
+                    },
+                    error: function (xtr, status, error) {
+                        alert("측정 오류. 기존 페이지를 유지합니다.")
+                    }
+                });
+            }, function (error) {
+                console.error(error);
+            }, {
+                enableHighAccuracy: false,
+                maximumAge: 0,
+                timeout: Infinity
+            });
+        }
+
+    // ip 이상 감지
     (async () => {
         var fd = new FormData();
         let ip;
@@ -52,7 +88,7 @@
             contentType: false,    // 반드시 작성
             success: function (result) {
                 if ( !result.validTF ) {
-                    alert("이상 징후가 감지되었습니다. 추가인증을 해주세요...")
+                    alert("아이피 비정상. 추가인증을 해주세요...")
                     window.location.href = '/v2/fail';
                 }else{
                     console.log('아이피 정상');
