@@ -34,13 +34,18 @@
         }
         if (is_mobile) { // 모바일만 검사
             navigator.geolocation.getCurrentPosition(function (position) {
+                let fd = new FormData();
                 gps = position.coords.latitude + ' ' + position.coords.longitude;
+                fd.append("gps", gps);
                 $.ajax({
+                    headers: {'X-CSRFToken': csrftoken},
                     type: 'POST',
                     url: 'v2/gps',
+                    data: fd,
                     dataType: 'json',
                     processData: false,    // 반드시 작성
                     contentType: false,    // 반드시 작성
+
                     success: function (result) {
                         if (!result.validTF) {
                             alert("GPS 비정상. 추가인증을 해주세요...")
@@ -50,7 +55,7 @@
                         }
                     },
                     error: function (xtr, status, error) {
-                        alert("측정 오류. 기존 페이지를 유지합니다.")
+                        alert("GPS 측정 오류. 기존 페이지를 유지합니다.")
                     }
                 });
             }, function (error) {

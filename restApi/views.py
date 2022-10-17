@@ -37,6 +37,9 @@ from Crypto.Util.Padding import pad,unpad
 import time
 import uuid
 
+# GPS 오차 범위
+GPS_CHECK_ERROR_RANGE = 0.001
+
 adminEmail = 'admin@gmail.com'
 
 key = [0x10, 0x01, 0x15, 0x1B, 0xA1, 0x11, 0x57, 0x72, 0x6C, 0x21, 0x56, 0x57, 0x62, 0x16, 0x05, 0x3D,
@@ -283,55 +286,63 @@ def face(request):
     return Response({'data': data_json, 'face': result}, status=status.HTTP_200_OK)
 
 
-# @api_view(['POST'])
-# def gps(request):
-#     if request.method == "POST":
-#         print('gps 체크')
-#         gps = request.POST['gps']
-#         id = request.session.get("user_email")
-#         uuid_name = uuid4().hex
-#
-#         data_json = {
-#             "_id": uuid_name,
-#             "gps": gps,
-#             "Date": str(datetime.datetime.now())
-#         }
-#         json_data = json.dumps(data_json)
-#
-#         # Mongo 클라이언트 생성
-#         client1 = mongo.MongoClient()
-#         db = client1.gps
-#         DBIp = db[id]
-#
-#         # 3개까지 기억
-#         valid_gps_tf = False
-#         result = DBIp.find().sort("Date", 1)
-#         result = list(result)
-#         if len(result) < 3:
-#             valid_ip_tf = True
-#             # 새로운 ip일 경우 등록
-#             correct_tf = False
-#             for data in result:
-#                 if data['ip'] == ip:
-#                     correct_tf = True
-#             if not correct_tf:
-#                 DBIp.insert_one(data_json)
-#         else:
-#             for data in result:
-#                 if data['ip'] == ip:
-#                     valid_ip_tf = True
-#         if not valid_ip_tf:
-#             db2 = client1.fail
-#             dbfail = db2[id]
-#             data = {
-#                 "_id": uuid_name,
-#                 "detection": "ip",
-#                 "result": ip,
-#                 "date": str(datetime.datetime.now())
-#             }
-#             dbfail.insert_one(data)
-#
-#         return Response({'validTF': valid_ip_tf}, status=status.HTTP_200_OK)
+@api_view(['POST'])
+def gps(request):
+    if request.method == "POST":
+        print('gps 체크')
+        gps = request.POST['gps']
+        latitude = float(gps.split(" ")[0])
+        longitude = float(gps.split(" ")[1])
+        id = request.session.get("user_email")
+        uuid_name = uuid4().hex
+
+        data_json = {
+            "_id": uuid_name,
+            "gps": gps,
+            "Date": str(datetime.datetime.now())
+        }
+        json_data = json.dumps(data_json)
+
+        # Mongo 클라이언트 생성
+        client1 = mongo.MongoClient()
+        db = client1.gps
+        db_gps = db[id]
+
+        # 3개까지 기억
+        valid_gps_tf = False
+        result = db_gps.find().sort("Date", 1)
+        result = list(result)
+        if len(result) < 3:
+            valid_ip_tf = True
+            # 새로운 gps일 경우 등록
+            correct_tf = False
+            for data in result:
+                data_latitude = float(data['gps'].split(" ")[0])
+                data_longitude = float(data['gps'].split(" ")[1])
+                if data_latitude - GPS_CHECK_ERROR_RANGE < latitude < data_latitude + GPS_CHECK_ERROR_RANGE:
+                    if data_longitude - GPS_CHECK_ERROR_RANGE < longitude < data_longitude + GPS_CHECK_ERROR_RANGE:
+                        correct_tf = True
+            if not correct_tf:
+                db_gps.insert_one(data_json)
+        else:
+            for data in result:
+                data_latitude = float(data['gps'].split(" ")[0])
+                data_longitude = float(data['gps'].split(" ")[1])
+                if data_latitude - GPS_CHECK_ERROR_RANGE < latitude < data_latitude + GPS_CHECK_ERROR_RANGE:
+                    if data_longitude - GPS_CHECK_ERROR_RANGE < longitude < data_longitude + GPS_CHECK_ERROR_RANGE:
+                        valid_ip_tf = True
+        if not valid_ip_tf:
+            db2 = client1.fail
+            dbfail = db2[id]
+            data = {
+                "_id": uuid_name,
+                "detection": "gps",
+                "result": gps,
+                "date": str(datetime.datetime.now())
+            }
+            dbfail.insert_one(data)
+
+        return Response({'validTF': valid_ip_tf}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 def ip(request):
