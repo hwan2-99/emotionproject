@@ -332,40 +332,40 @@ def v2_main(request):
                                })
 
 def v2_userManager(request):
-    request.method == 'GET'
-    # Mongo 클라이언트 생성
-    client1 = mongo.MongoClient()
-    dbs = client1.log
-    #로그 기록 찍기
-    id = request.session.get("user_email")
-    DBEmotion = dbs[id]
-    gps = request.GET.get('gps')
-    device = request.GET.get('device')
-    data = {"log": "userManager", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
-    DBEmotion.insert_one(data)
+    if request.method == 'GET':
+        # Mongo 클라이언트 생성
+        client1 = mongo.MongoClient()
+        dbs = client1.log
+        #로그 기록 찍기
+        id = request.session.get("user_email")
+        DBEmotion = dbs[id]
+        gps = request.GET.get('gps')
+        device = request.GET.get('device')
+        data = {"log": "userManager", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
+        DBEmotion.insert_one(data)
 
-    # 유저가 없는 경우 메인 화면으로 보냄
-    try:
-        users = User.objects.all()
-    except User.DoesNotExist:
-        return render(request, 'index.html', {'error': 'No signIn'})
+        # 유저가 없는 경우 메인 화면으로 보냄
+        try:
+            users = User.objects.all()
+        except User.DoesNotExist:
+            return render(request, 'index.html', {'error': 'No signIn'})
 
-    # 첫 번째 유저의 추가 인증 수단이 설정되지 않은 경우 메인 화면으로 보냄 (검토 필요)
-    try:
-        choiceCheck = ChoiceCheck.objects.get(email=users[0].email)
-    except ChoiceCheck.DoesNotExist:
-        return render(request, 'index.html', {'error': 'No signIn'})
+        # 첫 번째 유저의 추가 인증 수단이 설정되지 않은 경우 메인 화면으로 보냄 (검토 필요)
+        try:
+            choiceCheck = ChoiceCheck.objects.get(email=users[0].email)
+        except ChoiceCheck.DoesNotExist:
+            return render(request, 'index.html', {'error': 'No signIn'})
 
-    # 첫 번째 유저의 암호화 알고리즘이 설정되지 않은 경우 메인 화면으로 보냄 (검토 필요)
-    try:
-        encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=users[0].email)
-    except EncryptionAlgorithm.DoesNotExist:
+        # 첫 번째 유저의 암호화 알고리즘이 설정되지 않은 경우 메인 화면으로 보냄 (검토 필요)
+        try:
+            encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=users[0].email)
+        except EncryptionAlgorithm.DoesNotExist:
 
-        return render(request, 'index.html', {'error': 'No signIn'})
+            return render(request, 'index.html', {'error': 'No signIn'})
 
 
 
-    return render(request, 'userManager.html', {'username': request.session.get('userName'), 'type': request.session.get('type'),"users":users,"initialization":[choiceCheck.choice,encryptionAlgorithm.choice]})
+        return render(request, 'userManager.html', {'username': request.session.get('userName'), 'type': request.session.get('type'),"users":users,"initialization":[choiceCheck.choice,encryptionAlgorithm.choice]})
 
 
 
