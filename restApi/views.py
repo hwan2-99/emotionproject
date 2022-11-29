@@ -1,17 +1,12 @@
-import json
 from builtins import str
 
-import uuid as uuid
 from django.shortcuts import render
 
 # Create your views here.
 import datetime
 import numpy as np
-import base64
 import pymongo as mongo
 import json
-from datetime import date
-#from datetime import datetime
 from uuid import uuid4
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
@@ -19,19 +14,17 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from voiceEmotion.main import emotionCheck
 from faceEmotion.face_Recognition import myface
-from django import http
 import wave
 from faceEmotion.face import faceEmotion
 # sqlite3 모델들
-from emotionSys.models import User, AuthSms, Auth_Category, AuthEmail, Emotion, EncryptionAlgorithm, ChoiceCheck
+from emotionSys.models import EncryptionAlgorithm, ChoiceCheck
 
 # 암복호화 관련
-from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Cipher import PKCS1_v1_5
 from Crypto.PublicKey import RSA
 import base64
 from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad,unpad
+from Crypto.Util.Padding import unpad
 
 # 로그 파일 생성 작업용
 import time

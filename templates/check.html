@@ -23,6 +23,10 @@
     <script src='{% static "assets/js/face-api.min.js" %}'></script>
 </head>
 <script>
+    {% if message %}
+        alert("{{ message }}");
+    {% endif %}
+
     function emotion_reCheck() {
         if (document.getElementById('loading').style.display == 'none') {
             document.getElementById('loading').style.display = 'block';
@@ -94,7 +98,8 @@
                                 <span class="visually-hidden">Loading...</span>
                             </div>
                         </div>
-                        <div></div>
+                        <div>
+                        </div>
                     {% endif %}
                 {% endif %}
             </div>
@@ -238,7 +243,7 @@
                                 <div onclick="location.href='/v2/locateCheck'" class="col-lg-6 mb-4">
                                     <div class="card textwhite bg-info text-white shadow">
                                         <div class="card-body">
-                                            <p class="m-0">위치 기반 재인증(현재 미운용)</p>
+                                            <p class="m-0">위치 기반 재인증</p>
                                         </div>
                                     </div>
                                 </div>

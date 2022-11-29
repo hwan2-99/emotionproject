@@ -33,6 +33,8 @@ import base64
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad,unpad
 
+from uuid import uuid4
+
 def main(request):
 
     request.method == 'GET'
@@ -788,20 +790,18 @@ def v2_questionCheck(request):
 
         user_email = request.session.get('user_email')
 
-        gps = request.GET.get('gps')
-        device = request.GET.get('device')
-        client1 = mongo.MongoClient()
-        dbs = client1.log
-        DBLog = dbs["admin"]
-        data = {"log": "main", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
+        # gps = request.GET.get('gps')
+        # device = request.GET.get('device')
+        # client1 = mongo.MongoClient()
+        # dbs = client1.log
+        # DBLog = dbs["admin"]
+        # data = {"log": "main", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
 
         user = User.objects.get(email=user_email)
 
         if user_email is None:
             return render(request, 'index.html')
-
         else:
-
             return render(request, 'questionCheck.html', {
                 'username': request.session.get('userName'),
                 'type': request.session.get('type'),
@@ -817,15 +817,11 @@ def v2_questionCheck(request):
             print('correct')
             return render(request, 'index.html',
                           {'username': request.session.get('userName'), 'type': request.session.get('type')})
-
         else:
             print('fail')
             return render(request, 'check.html')
 
-
-
 class v2_phoneCheck(View):
-
     def send_sms(self, auth_phone, auth_number):
 
         messages = {"to": str(auth_phone)}
@@ -896,15 +892,59 @@ class v2_phoneCheck(View):
             print('fail')
             return render(request, 'check.html')
 
-# def v2_locateCheck(request):
-#     if request.method == 'GET':
-#
-#         if(false)
-#             return render(request, 'check.html')
-#
-#         else
-#             return render(request, 'index.html')
+def v2_locateCheck(request):
+    if request.method == 'GET':
+        result = requests.get('https://api.ip.pe.kr/')
+        ip = result.text
+        id = request.session.get("user_email")
+        uuid_name = uuid4().hex
 
+        data_json = {
+            "_id": uuid_name,
+            "ip": ip,
+            "Date": str(datetime.datetime.now())
+        }
+        json_data = json.dumps(data_json)
+
+        # Mongo 클라이언트 생성
+        client1 = mongo.MongoClient()
+        db = client1.ip
+        DBIp = db[id]
+
+        # 3개까지 기억
+        valid_ip_tf = False
+        result = DBIp.find().sort("Date", 1)
+        result = list(result)
+        if len(result) < 3:
+            valid_ip_tf = True
+            # 새로운 ip일 경우 등록
+            correct_tf = False
+            for data in result:
+                if data['ip'] == ip:
+                    correct_tf = True
+            if not correct_tf:
+                DBIp.insert_one(data_json)
+        else:
+            for data in result:
+                if data['ip'] == ip:
+                    valid_ip_tf = True
+        if not valid_ip_tf:
+            db2 = client1.fail
+            dbfail = db2[id]
+            data = {
+                "_id": uuid_name,
+                "detection": "ip",
+                "result": ip,
+                "date": str(datetime.datetime.now())
+            }
+            dbfail.insert_one(data)
+
+        if valid_ip_tf:
+            return render(request, 'index.html',
+                          {'username': request.session.get('userName'), 'type': request.session.get('type')})
+        else:
+            return render(request, 'check.html',
+                          {'message': '위치 기반 재인증에 실패했습니다.'})
 
 def v2_dashBoard(request):
     if request.method == 'GET':
