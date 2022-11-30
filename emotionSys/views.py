@@ -592,7 +592,6 @@ def v2_signUp(request):
 
         return render(request, 'index.html')
 
-
 def v2_fail(request):
     if request.method == 'GET':
         # auth_category = Auth_Category.objects.all()
@@ -605,8 +604,13 @@ def v2_fail(request):
         # DBLog = dbs["admin"]
         # data = {"log": "fail", "date": datetime.datetime.now(), "GPS": gps, "device": device}
 
-        return render(request, 'check.html', {'username': request.session.get('userName'), 'type': request.session.get('type')})
+        user_email = request.session.get("user_email")
+        choice_check = ChoiceCheck.objects.get(email=user_email)
+        choice = choice_check.choice
 
+        return render(request, 'check.html', {'username': request.session.get('userName'),
+                                              'type': request.session.get('type'),
+                                              'choice': choice})
 def v2_emotionlog(request):
     client1 = mongo.MongoClient()
     emotion_db = client1.emotion

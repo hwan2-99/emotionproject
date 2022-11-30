@@ -226,48 +226,60 @@
                     <div class="row">
                         <div class="col">
                             <div class="row">
-                                <div onclick="emotion()" class="col-lg-6 mb-4">
-                                    <div class="bg-gray-300 card textwhite text-white shadow">
-                                        <div class="card-body BackgroundColorGreen2">
-                                            <p onclick="emotion_reCheck()" class="m-0">감정 기반 재인증</p>
+                                {% if choice == 1 %}
+                                    <div onclick="emotion()" class="col-lg-6 mb-4">
+                                        <div class="bg-gray-300 card textwhite text-white shadow">
+                                            <div class="card-body BackgroundColorGreen2">
+                                                <p onclick="emotion_reCheck()" class="m-0">감정 기반 재인증</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div onclick="location.href='/v2/emailCheck'" class="col-lg-6 mb-4">
-                                    <div class="card textwhite bg-gray-300 text-white shadow BackgroundColorBlue">
-                                        <div class="card-body BackgroundColorBlue">
-                                            <p class="m-0">이메일 재인증</p>
+                                {% endif %}
+                                {% if choice == 2 %}
+                                    <div onclick="location.href='/v2/emailCheck'" class="col-lg-6 mb-4">
+                                        <div class="card textwhite bg-gray-300 text-white shadow BackgroundColorBlue">
+                                            <div class="card-body BackgroundColorBlue">
+                                                <p class="m-0">이메일 재인증</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div onclick="location.href='/v2/locateCheck'" class="col-lg-6 mb-4">
-                                    <div class="card textwhite bg-info text-white shadow">
-                                        <div class="card-body">
-                                            <p class="m-0">위치 기반 재인증</p>
+                                {% endif %}
+                                {% if choice == 3 %}
+                                    <div onclick="location.href='/v2/locateCheck'" class="col-lg-6 mb-4">
+                                        <div class="card textwhite bg-info text-white shadow">
+                                            <div class="card-body">
+                                                <p class="m-0">위치 기반 재인증</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div onclick="location.href='/v2/phoneCheck'" class="col-lg-6 mb-4">
-                                    <div class="card textwhite bg-gray-300 text-white shadow BackgroundColorGreen">
-                                        <div class="card-body BackgroundColorGreen">
-                                            <p class="m-0">휴대폰 번호 재인증</p>
+                                {% endif %}
+                                {% if choice == 4 %}
+                                    <div onclick="location.href='/v2/phoneCheck'" class="col-lg-6 mb-4">
+                                        <div class="card textwhite bg-gray-300 text-white shadow BackgroundColorGreen">
+                                            <div class="card-body BackgroundColorGreen">
+                                                <p class="m-0">휴대폰 번호 재인증</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div onclick="location.href='/v2/patternCheck'" class="col-lg-6 mb-4">
-                                    <div class="card textwhite bg-gray-300 text-white shadow BackgroundColorWhite">
-                                        <div class="card-body BackgroundColorYellow">
-                                            <p class="m-0">패턴 재인증</p>
+                                {% endif %}
+                                {% if choice == 5 %}
+                                    <div onclick="location.href='/v2/patternCheck'" class="col-lg-6 mb-4">
+                                        <div class="card textwhite bg-gray-300 text-white shadow BackgroundColorWhite">
+                                            <div class="card-body BackgroundColorYellow">
+                                                <p class="m-0">패턴 재인증</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div onclick="location.href='/v2/questionCheck'" class="col-lg-6 mb-4">
-                                    <div class="card textwhite bg-gray-300 text-white shadow BackgroundColorWhite">
-                                        <div class="card-body BackgroundColorPurple">
-                                            <p class="m-0">질문 답변 재인증</p>
+                                {% endif %}
+                                {% if choice == 6 %}
+                                    <div onclick="location.href='/v2/questionCheck'" class="col-lg-6 mb-4">
+                                        <div class="card textwhite bg-gray-300 text-white shadow BackgroundColorWhite">
+                                            <div class="card-body BackgroundColorPurple">
+                                                <p class="m-0">질문 답변 재인증</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
