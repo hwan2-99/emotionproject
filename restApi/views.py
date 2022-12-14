@@ -8,7 +8,6 @@ import numpy as np
 import base64
 import pymongo as mongo
 import json
-from datetime import date
 from datetime import datetime
 from uuid import uuid4
 from django.views.decorators.csrf import csrf_exempt
@@ -80,7 +79,7 @@ def voice(request):
             '_id': uuid_name,
             'positive': voiceresult['neutral'],
             'negative': voiceresult['fear'],
-            'date': str(datetime.datetime.now())
+            'date': str(datetime.now())
         }
 
         # json 데이터 직렬화
@@ -115,10 +114,11 @@ def voice(request):
                 "_id": uuid_name,
                 "detection": "voice",
                 "result": voiceresult['fear'],
-                "date": str(datetime.datetime.now())
+                "date": str(datetime.now())
             }
             dbfail.insert_one(data)
 
+        print(data_json)
         print(encrypted_data)
         encrypt_endTime = datetime.now()
 

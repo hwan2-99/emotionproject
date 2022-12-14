@@ -315,7 +315,7 @@
     <script src='{% static "assets/js/app.js" %}'></script>
     <div id="formats"></div>
 
-    {% if type != 1%}
+    {% if type %}
     <script>
         const video = document.getElementById("video");
 
@@ -380,7 +380,7 @@
                 success : function(result){
                     fear = parseFloat(detections[0].expressions.fearful).toFixed(8)
                     if(fear > 0.15 || result.face == 'X') {``
-                        alert("이상 징후가 감지되었습니다. 추가인증을 해주세요...")
+                        alert("이상 징후가 감지되었습니다. 추가인증을 해주세요.")
                         window.location.href = '/v2/fail';
                     }
 
@@ -403,6 +403,7 @@
             });
         }
     </script>
+    {% endif %}
     {% endif %}
     <script type="text/javascript">
         function getIP(json) {
