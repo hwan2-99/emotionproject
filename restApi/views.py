@@ -1,14 +1,12 @@
-import json
+from builtins import str
 
 from django.shortcuts import render
 
 # Create your views here.
 import datetime
 import numpy as np
-import base64
 import pymongo as mongo
 import json
-from datetime import datetime
 from uuid import uuid4
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
@@ -16,57 +14,116 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from voiceEmotion.main import emotionCheck
 from faceEmotion.face_Recognition import myface
-from django import http
 import wave
 from faceEmotion.face import faceEmotion
 # sqlite3 모델들
-from emotionSys.models import User, AuthSms, Auth_Category, AuthEmail, Emotion, EncryptionAlgorithm, ChoiceCheck
+from emotionSys.models import EncryptionAlgorithm, ChoiceCheck
 
-from Crypto.Cipher import Salsa20
-from Crypto import Random
+# 암복호화 관련
+from Crypto.Cipher import PKCS1_v1_5
+from Crypto.PublicKey import RSA
+import base64
 from Crypto.Cipher import AES
+from Crypto.Util.Padding import unpad
+
+# 로그 파일 생성 작업용
+import time
+import uuid
+
+# GPS 오차 범위
+GPS_CHECK_ERROR_RANGE = 0.001
+
+adminEmail = 'admin@gmail.com'
 
 key = [0x10, 0x01, 0x15, 0x1B, 0xA1, 0x11, 0x57, 0x72, 0x6C, 0x21, 0x56, 0x57, 0x62, 0x16, 0x05, 0x3D,
         0xFF, 0xFE, 0x11, 0x1B, 0x21, 0x31, 0x57, 0x72, 0x6B, 0x21, 0xA6, 0xA7, 0x6E, 0xE6, 0xE5, 0x3F]
-BS = 16
-pad = lambda s: s + (BS - len(s.encode('utf-8')) % BS) * chr(BS - len(s.encode('utf-8')) % BS)
-unpad = lambda s : s[:-ord(s[len(s)-1:])]
 
-class AESCipher:
-    def __init__( self, key ):
-        self.key = key
-
-    def encrypt( self, raw ):
-        raw = pad(raw)
-        iv = Random.new().read( AES.block_size )
-        cipher = AES.new( self.key, AES.MODE_CBC, iv )
-        return base64.b64encode( iv + cipher.encrypt( raw.encode('utf-8') ) )
-
-    def decrypt( self, enc ):
-        enc = base64.b64decode(enc)
-        iv = enc[:16]
-        cipher = AES.new(self.key, AES.MODE_CBC, iv )
-        return unpad(cipher.decrypt( enc[16:] ))
+def symmetric_decrypt(enc, symmetrical_key):
+    enc = base64.b64decode(enc)
+    cipher = AES.new(symmetrical_key.encode('utf-8'), AES.MODE_ECB)
+    return unpad(cipher.decrypt(enc), 16)
 
 @csrf_exempt
 @api_view(['GET', 'POST'])
 def voice(request):
     # today = date.today()
-
-    encrypt_startTime = datetime.now()
-
+    #encrypt_startTime = datetime.now()
     if request.method == "POST":
-        # 음성 서버에 저장하는 작업
-        audio_file = request.FILES.get('audio_data', None)
+        # nchannels = 1
+        # sampwidth = 1
+        # framerate = 8000
+        # nframes = 1
+        #
+        # name = 'output.wav'
+        # audio = wave.open(name, 'wb')
+        # audio.setnchannels(nchannels)
+        # audio.setsampwidth(sampwidth)
+        # audio.setframerate(framerate)
+        # audio.setnframes(nframes)
+        # blob = open("original.wav").read()  # such as `blob.read()`
+        # audio.writeframes(blob)
 
-        obj = wave.open(audio_file, 'r')
+        # 음성 서버에 저장하는 작업
+        #audio_file = request.FILES.get('audio_data', None)
+        encrypted = request.POST['encrypted_audio_data']
+        if EncryptionAlgorithm.objects.get(email=request.session.get("user_email")).choice == 1:
+            symmetrical_key = request.session.get('symmetrical_key')
+            print('대칭키', symmetrical_key)
+        elif EncryptionAlgorithm.objects.get(email=request.session.get("user_email")).choice == 2:
+            encrypted_key = request.POST['encrypted_key']
+            key = RSA.importKey(request.session.get('receive_key'))
+            decryptor = PKCS1_v1_5.new(key)
+            # 대칭키 복호화
+            ciphertext = base64.b64decode(encrypted_key.encode('ascii'))
+            plaintext = decryptor.decrypt(ciphertext, b'DECRYPTION FAILED')
+            decrypted_key = plaintext.decode('utf8')
+            print('복호화 한 대칭키', decrypted_key)
+            symmetrical_key = decrypted_key
+
+        # 파일 복호화 (대칭 키)
+        decrypted = symmetric_decrypt(bytes(encrypted,'utf-8'), symmetrical_key)
+        encode_string = decrypted.decode("utf-8", "ignore")
+        decode_byte = base64.b64decode(encode_string)
+        # 로그 파일 생성
+        index = uuid.uuid4()
+        userEmail = request.session.get('user_email')
+        dataType = 'voice_data'
+        startTime = int(request.POST['startTime'])  # 시작 시간
+        endTime = int(time.time()*1000)  # 끝 시간
+        timeGap = endTime-startTime
+        if EncryptionAlgorithm.objects.get(email=request.session.get("user_email")).choice == 1:
+            encryption_algorithm = 'symmetry'
+        elif EncryptionAlgorithm.objects.get(email=request.session.get("user_email")).choice == 2:
+            encryption_algorithm = 'asymmetry'
+        else:
+            raise Exception("unvalid encryption algorithm")
+        with open('voiceLog.txt', 'a') as f:
+            f.write(str(index)+"|"+str(userEmail)+"|"+str(dataType)+"|"+str(startTime)+"|"+str(endTime)+"|"+str(timeGap)+"|"+str(encryption_algorithm)+"\n")
+        # 복호화 wav 파일 저장
+        with open("temp.wav", "wb") as wav_file:
+            wav_file.write(decode_byte)
+        # 복호화 wav 파일 읽기
+        #obj = wave.open(audio_file, 'r')
+        wav_file = open("temp.wav", "rb")
+        wf = wave.open(wav_file, 'r')
+        # test.wav 생성
         audio = wave.open('voiceEmotion/test.wav', 'wb')
-        audio.setnchannels(obj.getnchannels())
-        audio.setnframes(obj.getnframes())
-        audio.setsampwidth(obj.getsampwidth())
-        audio.setframerate(obj.getframerate())
-        blob = audio_file.read()
+        audio.setnchannels(wf.getnchannels())
+        audio.setnframes(wf.getnframes())
+        audio.setsampwidth(wf.getsampwidth())
+        audio.setframerate(wf.getframerate())
+        #blob = audio_file.read()  # bytes타입
+        blob = decode_byte
         audio.writeframes(blob)
+
+        #
+        # with open('test.txt', 'w') as f:
+        #     f.write('원본' + str(blob) + '\n')
+        #
+
+        # 내용물 확인 테스트
+        with open('test22.txt', 'w') as f:
+            f.write('흉내' + str(decode_byte) + '\n')
 
         voiceresult = emotionCheck()
 
@@ -79,23 +136,20 @@ def voice(request):
             '_id': uuid_name,
             'positive': voiceresult['neutral'],
             'negative': voiceresult['fear'],
-            'date': str(datetime.now())
+            'date': str(datetime.datetime.now())
         }
 
-        # json 데이터 직렬화
-        json_data = json.dumps(data_json)
-        # 암호화
-        encrypted_data = AESCipher(bytes(key)).encrypt(json_data)
+        # # json 데이터 직렬화
+        # json_data = json.dumps(data_json)
+        # # 암호화
+        # encrypted_data = AESCipher(bytes(key)).encrypt(json_data)
 
         # Mongo 클라이언트 생성
         client1 = mongo.MongoClient()
         db = client1.voice
         DBVoice = db[id]
 
-        DBVoice.insert_one({
-            'encrypted_data': encrypted_data,
-            'date': data_json['date']
-        })
+        DBVoice.insert_one(data_json)
 
         client2 = mongo.MongoClient()
         db2 = client2.voice_count
@@ -114,58 +168,103 @@ def voice(request):
                 "_id": uuid_name,
                 "detection": "voice",
                 "result": voiceresult['fear'],
-                "date": str(datetime.now())
+                "date": str(datetime.datetime.now())
             }
             dbfail.insert_one(data)
 
-        print(data_json)
-        print(encrypted_data)
-        encrypt_endTime = datetime.now()
+        #encrypt_endTime = datetime.now()
 
-        encrypt_Time = encrypt_endTime - encrypt_startTime
-
+        #encrypt_Time = encrypt_endTime - encrypt_startTime
 
         return Response({'data': data_json}, status=status.HTTP_200_OK)
 
 @api_view(['GET','POST'])
 def face(request):
-    # today = date.today()
-    # id = request.session.get("user")
+    #복호화
+    # key = RSA.import_key(request.session.get('receive_key'))
+    # encryptedText = request.POST['encryptedText']
+    # decryptor = PKCS1_OAEP.new(key)
+    # decrypted = decryptor.decrypt(ast.literal_eval(str(encryptedText)))
+    # print('복호화!!', str(decrypted))
 
-    image = request.POST['faceURL'].split(',')[1]
+    faceURL = request.POST['faceURL']
+    neutral = request.POST['neutral']
+    happy = request.POST['happy']
+    angry = request.POST['angry']
+    sad = request.POST['sad']
+    fearful = request.POST['fearful']
+    startTime = request.POST['startTime']
+
+    if EncryptionAlgorithm.objects.get(email=request.session.get("user_email")).choice == 1:
+        symmetrical_key = request.session.get('symmetrical_key')
+        print('대칭키', symmetrical_key)
+    elif EncryptionAlgorithm.objects.get(email=request.session.get("user_email")).choice == 2:
+        encrypted_key = request.POST['encrypted_key']
+        key = RSA.importKey(request.session.get('receive_key'))
+        decryptor = PKCS1_v1_5.new(key)
+        # 대칭키 복호화
+        ciphertext = base64.b64decode(encrypted_key.encode('ascii'))
+        plaintext = decryptor.decrypt(ciphertext, b'DECRYPTION FAILED')
+        decrypted_key = plaintext.decode('utf8')
+        symmetrical_key = decrypted_key
+        print('복호화 한 대칭키', symmetrical_key)
+
+    # 데이터 복호화 (대칭 키)
+    faceURL = symmetric_decrypt(bytes(faceURL, 'utf-8'), symmetrical_key).decode("utf-8", "ignore")
+    neutral = symmetric_decrypt(bytes(neutral, 'utf-8'), symmetrical_key).decode("utf-8", "ignore")
+    happy = symmetric_decrypt(bytes(happy, 'utf-8'), symmetrical_key).decode("utf-8", "ignore")
+    angry = symmetric_decrypt(bytes(angry, 'utf-8'), symmetrical_key).decode("utf-8", "ignore")
+    sad = symmetric_decrypt(bytes(sad, 'utf-8'), symmetrical_key).decode("utf-8", "ignore")
+    fearful = symmetric_decrypt(bytes(fearful, 'utf-8'), symmetrical_key).decode("utf-8", "ignore")
+    startTime = symmetric_decrypt(bytes(startTime, 'utf-8'), symmetrical_key).decode("utf-8", "ignore")
+
+    # 로그 파일 생성
+    index = uuid.uuid4()
+    userEmail = request.session.get('user_email')
+    dataType = 'face_data'
+    startTime = int(startTime)  # 시작 시간
+    endTime = int(time.time() * 1000)  # 끝 시간
+    timeGap = endTime - startTime
+    if EncryptionAlgorithm.objects.get(email=request.session.get("user_email")).choice == 1:
+        encryption_algorithm = 'symmetry'
+    elif EncryptionAlgorithm.objects.get(email=request.session.get("user_email")).choice == 2:
+        encryption_algorithm = 'asymmetry'
+    else:
+        raise Exception("unvalid encryption algorithm")
+    with open('faceLog.txt', 'a') as f:
+        f.write(str(index) + "|" + str(userEmail) + "|" + str(dataType) + "|" + str(startTime) + "|" + str(
+            endTime) + "|" + str(timeGap) + "|" + str(encryption_algorithm) + "\n")
+
+    image = faceURL.split(',')[1]
     decoded_data = base64.b64decode(image)
     np_data = np.fromstring(decoded_data, np.uint8)
-
     id = request.session.get("user_email")
     result = myface(np_data,id)
 
     uuid_name = uuid4().hex
     data_json = {
         "_id": uuid_name,
-        "neutral": request.POST['neutral'],
-        "happy": request.POST['happy'],
-        "angry": request.POST['angry'],
-        "sad": request.POST['sad'],
-        "fearful": request.POST['fearful'],
+        "neutral": neutral,
+        "happy": happy,
+        "angry": angry,
+        "sad": sad,
+        "fearful": fearful,
         "Date": str(datetime.datetime.now())
     }
 
     json_data = json.dumps(data_json)
-    encrypted_data = AESCipher(bytes(key)).encrypt(json_data)
+    #encrypted_data = AESCipher(bytes(key)).encrypt(json_data)
     print("hello face")
     # Mongo 클라이언트 생성
     client1 = mongo.MongoClient()
     db = client1.face
     DBFace = db[id]
-    DBFace.insert_one({
-        "encrypted_data": encrypted_data,
-        "Date": data_json['Date']
-    })
+    DBFace.insert_one(data_json)
 
     f = open("timeLog.txt", 'w')
     f.close()
 
-    if float(request.POST['fearful']) >= 0.2:
+    if float(fearful) >= 0.2:
         print("fearful Test ~~~~~~~~~~~~~~~~~~")
         db2 = client1.fail
         dbfail = db2[id]
@@ -177,8 +276,116 @@ def face(request):
         }
         dbfail.insert_one(data)
 
-    print(encrypted_data)
     return Response({'data': data_json, 'face': result}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def gps(request):
+    if request.method == "POST":
+        print('gps 체크')
+        gps = request.POST['gps']
+        latitude = float(gps.split(" ")[0])
+        longitude = float(gps.split(" ")[1])
+        id = request.session.get("user_email")
+        uuid_name = uuid4().hex
+
+        data_json = {
+            "_id": uuid_name,
+            "gps": gps,
+            "Date": str(datetime.datetime.now())
+        }
+        json_data = json.dumps(data_json)
+
+        # Mongo 클라이언트 생성
+        client1 = mongo.MongoClient()
+        db = client1.gps
+        db_gps = db[id]
+
+        # 3개까지 기억
+        valid_gps_tf = False
+        result = db_gps.find().sort("Date", 1)
+        result = list(result)
+        if len(result) < 3:
+            valid_ip_tf = True
+            # 새로운 gps일 경우 등록
+            correct_tf = False
+            for data in result:
+                data_latitude = float(data['gps'].split(" ")[0])
+                data_longitude = float(data['gps'].split(" ")[1])
+                if data_latitude - GPS_CHECK_ERROR_RANGE < latitude < data_latitude + GPS_CHECK_ERROR_RANGE:
+                    if data_longitude - GPS_CHECK_ERROR_RANGE < longitude < data_longitude + GPS_CHECK_ERROR_RANGE:
+                        correct_tf = True
+            if not correct_tf:
+                db_gps.insert_one(data_json)
+        else:
+            for data in result:
+                data_latitude = float(data['gps'].split(" ")[0])
+                data_longitude = float(data['gps'].split(" ")[1])
+                if data_latitude - GPS_CHECK_ERROR_RANGE < latitude < data_latitude + GPS_CHECK_ERROR_RANGE:
+                    if data_longitude - GPS_CHECK_ERROR_RANGE < longitude < data_longitude + GPS_CHECK_ERROR_RANGE:
+                        valid_ip_tf = True
+        if not valid_ip_tf:
+            db2 = client1.fail
+            dbfail = db2[id]
+            data = {
+                "_id": uuid_name,
+                "detection": "gps",
+                "result": gps,
+                "date": str(datetime.datetime.now())
+            }
+            dbfail.insert_one(data)
+
+        return Response({'validTF': valid_ip_tf}, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def ip(request):
+    if request.method == "POST":
+        print('ip 체크')
+        ip = request.POST['ip']
+        id = request.session.get("user_email")
+        uuid_name = uuid4().hex
+
+        data_json = {
+            "_id": uuid_name,
+            "ip": ip,
+            "Date": str(datetime.datetime.now())
+        }
+        json_data = json.dumps(data_json)
+
+        # Mongo 클라이언트 생성
+        client1 = mongo.MongoClient()
+        db = client1.ip
+        DBIp = db[id]
+
+        # 3개까지 기억
+        valid_ip_tf = False
+        result = DBIp.find().sort("Date", 1)
+        result = list(result)
+        if len(result) < 3:
+            valid_ip_tf = True
+            # 새로운 ip일 경우 등록
+            correct_tf = False
+            for data in result:
+                if data['ip'] == ip:
+                    correct_tf = True
+            if not correct_tf:
+                DBIp.insert_one(data_json)
+        else:
+            for data in result:
+                if data['ip'] == ip:
+                    valid_ip_tf = True
+        if not valid_ip_tf:
+            db2 = client1.fail
+            dbfail = db2[id]
+            data = {
+                "_id": uuid_name,
+                "detection": "ip",
+                "result": ip,
+                "date": str(datetime.datetime.now())
+            }
+            dbfail.insert_one(data)
+
+        return Response({'validTF': valid_ip_tf}, status=status.HTTP_200_OK)
 
 @api_view(['UPDATE'])
 def mypage_emotion(request):
@@ -203,7 +410,7 @@ def choice_check(request):
 
         return Response(choiceCheck.choice, status=status.HTTP_200_OK)
 
-    if request.method == "PATCH":
+    if request.method == "PATCH" and adminEmail == request.session.get("user_email"):
         email = request.data['email']
         settingNum = request.data['settingNum']
         choiceCheck = ChoiceCheck.objects.get(email=email)
@@ -218,7 +425,7 @@ def encryption_algorithm(request):
         encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=email)
         return Response(encryptionAlgorithm.choice, status=status.HTTP_200_OK)
 
-    if request.method == "PATCH":
+    if request.method == "PATCH" and adminEmail == request.session.get("user_email"):
         email = request.data['email']
         settingNum = request.data['settingNum']
         encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=email)

@@ -4,6 +4,7 @@ import hmac
 import time
 import json
 from random import randint
+import random
 
 import datetime
 from datetime import date
@@ -25,33 +26,14 @@ from rest_framework.utils import json
 
 from emotionSys.models import User, AuthSms, Auth_Category, AuthEmail, Emotion, EncryptionAlgorithm, ChoiceCheck  # , User_Security, Security
 from my_settings import EMAIL
-#
-from Crypto.Cipher import Salsa20
-from Crypto import Random
+
+# 암복호화 관련
+from Crypto.PublicKey import RSA
+import base64
 from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad,unpad
 
-key = [0x10, 0x01, 0x15, 0x1B, 0xA1, 0x11, 0x57, 0x72, 0x6C, 0x21, 0x56, 0x57, 0x62, 0x16, 0x05, 0x3D,
-        0xFF, 0xFE, 0x11, 0x1B, 0x21, 0x31, 0x57, 0x72, 0x6B, 0x21, 0xA6, 0xA7, 0x6E, 0xE6, 0xE5, 0x3F]
-BS = 16
-pad = lambda s: s + (BS - len(s.encode('utf-8')) % BS) * chr(BS - len(s.encode('utf-8')) % BS)
-unpad = lambda s : s[:-ord(s[len(s)-1:])]
-
-class AESCipher:
-    def __init__( self, key ):
-        self.key = key
-
-    def encrypt( self, raw ):
-        raw = pad(raw)
-        iv = Random.new().read( AES.block_size )
-        cipher = AES.new( self.key, AES.MODE_CBC, iv )
-        return base64.b64encode( iv + cipher.encrypt( raw.encode('utf-8') ) )
-
-    def decrypt( self, enc ):
-        enc = base64.b64decode(enc)
-        iv = enc[:16]
-        cipher = AES.new(self.key, AES.MODE_CBC, iv )
-        return unpad(cipher.decrypt( enc[16:] ))
-
+from uuid import uuid4
 
 def main(request):
 
@@ -311,7 +293,6 @@ def v2_main(request):
     if request.method == 'GET':
 
         user_email = request.session.get('user_email')
-
         gps = request.GET.get('gps')
         device = request.GET.get('device')
         client1 = mongo.MongoClient()
@@ -321,45 +302,72 @@ def v2_main(request):
 
         if user_email is None:
             return render(request, 'index.html')
-
         else:
+            encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=user_email).choice
 
-            return render(request, 'index.html', {'username': request.session.get('userName'), 'type': request.session.get('type')})
+            if encryptionAlgorithm == 1:  # 대칭키
+                symmetrical_key = request.session.get('symmetrical_key')
+                return render(request, 'index.html',
+                              {'encryption_algorithm': encryptionAlgorithm,
+                               'symmetrical_key': symmetrical_key,
+                               'username': request.session.get('userName'),
+                               'type': request.session.get('type')
+                               })
+            elif encryptionAlgorithm == 2:  # 비대칭키
+                key = RSA.importKey(request.session.get('receive_key'))
+                # 퍼블릭 키 얻기
+                public_key = key.public_key()
+                # 퍼블릭 키 문자열로 변환하기
+                public_key_string = public_key.exportKey('PEM').decode("ascii")
+
+                # 서버가 데이터를 보낼 때 사용할 키
+                key = RSA.importKey(request.session.get('send_key'))
+                # 프라이빗 키 문자열로 변환하기
+                private_key_string = key.exportKey('PEM').decode("ascii")
+
+                return render(request, 'index.html',
+                              {'encryption_algorithm': encryptionAlgorithm,
+                               'public_key': public_key_string,
+                               'private_key': private_key_string,
+                               'username': request.session.get('userName'),
+                               'type': request.session.get('type')
+                               })
 
 def v2_userManager(request):
-    request.method == 'GET'
-    # Mongo 클라이언트 생성
-    client1 = mongo.MongoClient()
-    dbs = client1.log
-    #로그 기록 찍기
-    id = request.session.get("user_email")
-    DBEmotion = dbs[id]
-    gps = request.GET.get('gps')
-    device = request.GET.get('device')
-    data = {"log": "userManager", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
-    DBEmotion.insert_one(data)
+    if request.method == 'GET':
+        # Mongo 클라이언트 생성
+        client1 = mongo.MongoClient()
+        dbs = client1.log
+        #로그 기록 찍기
+        id = request.session.get("user_email")
+        DBEmotion = dbs[id]
+        gps = request.GET.get('gps')
+        device = request.GET.get('device')
+        data = {"log": "userManager", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
+        DBEmotion.insert_one(data)
 
-    # 유저가 없는 경우 메인 화면으로 보냄
-    try:
-        users = User.objects.all()
-    except User.DoesNotExist:
-        return render(request, 'index.html', {'error': 'No signIn'})
+        # 유저가 없는 경우 메인 화면으로 보냄
+        try:
+            users = User.objects.all()
+        except User.DoesNotExist:
+            return render(request, 'index.html', {'error': 'No signIn'})
 
-    # 첫 번째 유저의 추가 인증 수단이 설정되지 않은 경우 메인 화면으로 보냄 (검토 필요)
-    try:
-        choiceCheck = ChoiceCheck.objects.get(email=users[0].email)
-    except ChoiceCheck.DoesNotExist:
-        return render(request, 'index.html', {'error': 'No signIn'})
+        # 첫 번째 유저의 추가 인증 수단이 설정되지 않은 경우 메인 화면으로 보냄 (검토 필요)
+        try:
+            choiceCheck = ChoiceCheck.objects.get(email=users[0].email)
+        except ChoiceCheck.DoesNotExist:
+            return render(request, 'index.html', {'error': 'No signIn'})
 
-    # 첫 번째 유저의 암호화 알고리즘이 설정되지 않은 경우 메인 화면으로 보냄 (검토 필요)
-    try:
-        encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=users[0].email)
-    except EncryptionAlgorithm.DoesNotExist:
-        return render(request, 'index.html', {'error': 'No signIn'})
+        # 첫 번째 유저의 암호화 알고리즘이 설정되지 않은 경우 메인 화면으로 보냄 (검토 필요)
+        try:
+            encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=users[0].email)
+        except EncryptionAlgorithm.DoesNotExist:
+
+            return render(request, 'index.html', {'error': 'No signIn'})
 
 
 
-    return render(request, 'userManager.html', {'username': request.session.get('userName'), 'type': request.session.get('type'),"users":users,"initialization":[choiceCheck.choice,encryptionAlgorithm.choice]})
+        return render(request, 'userManager.html', {'username': request.session.get('userName'), 'type': request.session.get('type'),"users":users,"initialization":[choiceCheck.choice,encryptionAlgorithm.choice]})
 
 
 
@@ -397,24 +405,26 @@ def v2_facelog(request):
     DBFace = db[id]
 
     result = DBFace.find().sort("Date", -1)
-    result = list(result)
-
-    for index, item in enumerate(result):
-        encrypted_data = item['encrypted_data']
-        decrypted_data = AESCipher(bytes(key)).decrypt(encrypted_data)
-        decrypted_data.decode('utf-8')
-        decrypted_data = json.loads(decrypted_data)
-
-        result[index] = {
-            "_id": item['_id'],
-            "neutral": decrypted_data['neutral'],
-            "happy": decrypted_data['happy'],
-            "angry": decrypted_data['angry'],
-            "sad": decrypted_data['sad'],
-            "fearful": decrypted_data['fearful'],
-            "Date": item['Date']
-        }
-
+    ### 대칭키 복호화의 경우 ###
+    # #리스트로 변환
+    # result = list(result)
+    #
+    # # rsult리스트의 데이터들을 복호화 함
+    # for index, item in enumerate(result):
+    #     encrypted_data = item['encrypted_data']
+    #     decrypted_data = AESCipher(bytes(key)).decrypt(encrypted_data)
+    #     decrypted_data.decode('utf-8')
+    #     decrypted_data = json.loads(decrypted_data)
+    #     result[index] = {
+    #         "_id": item['_id'],
+    #         "neutral": decrypted_data['neutral'],
+    #         "happy": decrypted_data['happy'],
+    #         "angry": decrypted_data['angry'],
+    #         "sad": decrypted_data['sad'],
+    #         "fearful": decrypted_data['fearful'],
+    #         "Date": item['Date']
+    #     }
+    ######
     #로그 기록 찍기
     gps = request.GET.get('gps')
     device = request.GET.get('device')
@@ -435,22 +445,23 @@ def v2_voicelog(request):
     DBVoice = db1[id]
 
     result = DBVoice.find().sort("date", -1)
-    result = list(result)
-
-    for index, item in enumerate(result):
-        encrypted_data = item['encrypted_data']
-        decrypted_data = AESCipher(bytes(key)).decrypt(encrypted_data)
-        decrypted_data.decode('utf-8')
-        decrypted_data = json.loads(decrypted_data)
-
-        result[index] = {
-            '_id': item['_id'],
-            'positive': decrypted_data['positive'],
-            'negative': decrypted_data['negative'],
-            'date': item['date']
-        }
-
-
+    ### 대칭키 복호화의 경우 ###
+    # #리스트로 변환
+    # result = list(result)
+    #
+    # # rsult리스트의 데이터들을 복호화 함
+    # for index, item in enumerate(result):
+    #     encrypted_data = item['encrypted_data']
+    #     decrypted_data = AESCipher(bytes(key)).decrypt(encrypted_data)
+    #     decrypted_data.decode('utf-8')
+    #     decrypted_data = json.loads(decrypted_data)
+    #
+    #     result[index] = {
+    #         '_id': item['_id'],
+    #         'positive': decrypted_data['positive'],
+    #         'negative': decrypted_data['negative'],
+    #         'date': item['date']
+    #     }
 
     client2 = mongo.MongoClient()
     db2 = client2.voice_count
@@ -512,7 +523,6 @@ def v2_signIn(request):
         except User.DoesNotExist:
             return render(request, 'index.html', {'error': 'No signIn'})
 
-
         request.session['user_email'] = user.email
         request.session['type'] = user.type
         request.session['userName'] = user.name
@@ -523,8 +533,44 @@ def v2_signIn(request):
         # dbs = client1.log
         # DBLog = dbs["admin"]
         # data = {"log": "signin", "date": datetime.datetime.now(), "GPS": gps, "device": device}
+    #
+        encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=user_email).choice
 
-        return render(request, 'index.html', {'data': user.name, 'username': request.session.get('userName'), 'type': request.session.get('type')})
+        if encryptionAlgorithm == 1:  # 대칭키
+            alphabet_string = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
+            random_list = random.sample(alphabet_string, 16)
+            symmetrical_key = ''.join(random_list)
+            request.session['symmetrical_key'] = symmetrical_key
+
+            return render(request, 'index.html',
+                          {'encryption_algorithm': encryptionAlgorithm,
+                           'symmetrical_key': symmetrical_key,
+                           'username': request.session.get('userName'),
+                           'type': request.session.get('type')
+                           })
+        elif encryptionAlgorithm == 2:  # 비대칭키
+            # 서버가 데이터를 받을 때 사용할 키 -> 세션에 저장
+            key = RSA.generate(3072)
+            request.session['receive_key'] = str(key.exportKey('PEM').decode("ascii"))
+            # 퍼블릭 키 얻기
+            public_key = key.public_key()
+            # 퍼블릭 키 문자열로 변환하기
+            public_key_string = public_key.exportKey('PEM').decode("ascii")
+
+            # 서버가 데이터를 보낼 때 사용할 키 -> 세션에 저장
+            key = RSA.generate(3072)
+            request.session['send_key'] = str(key.exportKey('PEM').decode("ascii"))
+            # 프라이빗 키 문자열로 변환하기
+            private_key_string = key.exportKey('PEM').decode("ascii")
+
+            return render(request, 'index.html',
+                            {'encryption_algorithm': encryptionAlgorithm,
+                            'public_key': public_key_string,
+                            'private_key': private_key_string,
+                            'username': request.session.get('userName'),
+                            'type': request.session.get('type')
+                            })
+    #
 
 def v2_signOut(request):
     request.session.clear()
@@ -546,7 +592,6 @@ def v2_signUp(request):
 
         return render(request, 'index.html')
 
-
 def v2_fail(request):
     if request.method == 'GET':
         # auth_category = Auth_Category.objects.all()
@@ -559,8 +604,13 @@ def v2_fail(request):
         # DBLog = dbs["admin"]
         # data = {"log": "fail", "date": datetime.datetime.now(), "GPS": gps, "device": device}
 
-        return render(request, 'check.html', {'username': request.session.get('userName'), 'type': request.session.get('type')})
+        user_email = request.session.get("user_email")
+        choice_check = ChoiceCheck.objects.get(email=user_email)
+        choice = choice_check.choice
 
+        return render(request, 'check.html', {'username': request.session.get('userName'),
+                                              'type': request.session.get('type'),
+                                              'choice': choice})
 def v2_emotionlog(request):
     client1 = mongo.MongoClient()
     emotion_db = client1.emotion
@@ -744,20 +794,18 @@ def v2_questionCheck(request):
 
         user_email = request.session.get('user_email')
 
-        gps = request.GET.get('gps')
-        device = request.GET.get('device')
-        client1 = mongo.MongoClient()
-        dbs = client1.log
-        DBLog = dbs["admin"]
-        data = {"log": "main", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
+        # gps = request.GET.get('gps')
+        # device = request.GET.get('device')
+        # client1 = mongo.MongoClient()
+        # dbs = client1.log
+        # DBLog = dbs["admin"]
+        # data = {"log": "main", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
 
         user = User.objects.get(email=user_email)
 
         if user_email is None:
             return render(request, 'index.html')
-
         else:
-
             return render(request, 'questionCheck.html', {
                 'username': request.session.get('userName'),
                 'type': request.session.get('type'),
@@ -773,15 +821,11 @@ def v2_questionCheck(request):
             print('correct')
             return render(request, 'index.html',
                           {'username': request.session.get('userName'), 'type': request.session.get('type')})
-
         else:
             print('fail')
             return render(request, 'check.html')
 
-
-
 class v2_phoneCheck(View):
-
     def send_sms(self, auth_phone, auth_number):
 
         messages = {"to": str(auth_phone)}
@@ -852,15 +896,59 @@ class v2_phoneCheck(View):
             print('fail')
             return render(request, 'check.html')
 
-# def v2_locateCheck(request):
-#     if request.method == 'GET':
-#
-#         if(false)
-#             return render(request, 'check.html')
-#
-#         else
-#             return render(request, 'index.html')
+def v2_locateCheck(request):
+    if request.method == 'GET':
+        result = requests.get('https://api.ip.pe.kr/')
+        ip = result.text
+        id = request.session.get("user_email")
+        uuid_name = uuid4().hex
 
+        data_json = {
+            "_id": uuid_name,
+            "ip": ip,
+            "Date": str(datetime.datetime.now())
+        }
+        json_data = json.dumps(data_json)
+
+        # Mongo 클라이언트 생성
+        client1 = mongo.MongoClient()
+        db = client1.ip
+        DBIp = db[id]
+
+        # 3개까지 기억
+        valid_ip_tf = False
+        result = DBIp.find().sort("Date", 1)
+        result = list(result)
+        if len(result) < 3:
+            valid_ip_tf = True
+            # 새로운 ip일 경우 등록
+            correct_tf = False
+            for data in result:
+                if data['ip'] == ip:
+                    correct_tf = True
+            if not correct_tf:
+                DBIp.insert_one(data_json)
+        else:
+            for data in result:
+                if data['ip'] == ip:
+                    valid_ip_tf = True
+        if not valid_ip_tf:
+            db2 = client1.fail
+            dbfail = db2[id]
+            data = {
+                "_id": uuid_name,
+                "detection": "ip",
+                "result": ip,
+                "date": str(datetime.datetime.now())
+            }
+            dbfail.insert_one(data)
+
+        if valid_ip_tf:
+            return render(request, 'index.html',
+                          {'username': request.session.get('userName'), 'type': request.session.get('type')})
+        else:
+            return render(request, 'check.html',
+                          {'message': '위치 기반 재인증에 실패했습니다.'})
 
 def v2_dashBoard(request):
     if request.method == 'GET':
