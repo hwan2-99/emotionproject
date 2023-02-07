@@ -271,6 +271,29 @@
     <script src='{% static "assets/js/check.js" %}'></script>
 
 
+    <script>
+        const video = document.getElementById("video");
+
+        // face api 허용
+        Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri("{% static 'assets/models' %}"),
+          faceapi.nets.faceLandmark68Net.loadFromUri("{% static 'assets/models' %}"),
+          faceapi.nets.faceRecognitionNet.loadFromUri("{% static 'assets/models' %}"),
+          faceapi.nets.faceExpressionNet.loadFromUri("{% static 'assets/models' %}"),
+        ]).then(startVideo);
+
+        // 비디오 시작 함수
+        function startVideo() {
+          navigator.mediaDevices
+            .getUserMedia({ video: true })
+            .then(function (stream) {
+              video.srcObject = stream;
+            })
+            .catch(function (err) {
+              console.log(err);
+            });
+        }</script>
+
     {% if type %}
     <script>
         const video = document.getElementById("video");
