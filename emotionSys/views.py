@@ -133,6 +133,14 @@ def phone(request):
         return render(request, 'phonecheck.html')
 
 
+def v2_emotionSecurity(request):
+    if request.method == 'GET':
+        return render(request, 'emotionSecurity.html')
+
+def v2_emotionSecurityLogin(request):
+    if request.method == 'GET':
+        return render(request, 'emotionSecurityLogin.html')
+
 @csrf_exempt
 def signIn(request):
     if request.method == 'POST':
