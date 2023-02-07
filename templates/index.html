@@ -52,6 +52,7 @@
                         success: function (result) {
                             if (!result.validTF) {
                                 alert("GPS 비정상. 추가인증을 해주세요...")
+                                console.log(gps)
                                 window.location.href = '/v2/fail';
                             } else {
                                 console.log('GPS 정상');
