@@ -153,28 +153,18 @@ def v2_demo_certification(request):
 
 def v2_demo_encryption(request):
     if request.method == 'GET':
-        user_email = request.session.get('user_email')
-        encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=user_email).choice
 
-        if encryptionAlgorithm == 1:
-            return render(request, 'demo_encryption.html', {
-                'encryption_algorithm': encryptionAlgorithm,
-                'symmetrical_key': request.session.get('symmetrical_key'),
-                'username': request.session.get('userName'),
-                'type': request.session.get('type'),
-            })
-        elif encryptionAlgorithm == 2:
-            key = RSA.importKey(request.session.get('receive_key'))
-            public_key = key.public_key()
-            public_key_string = public_key.exportKey('PEM').decode("ascii")
+        key = RSA.importKey(request.session.get('receive_key'))
+        public_key = key.public_key()
+        public_key_string = public_key.exportKey('PEM').decode("ascii")
 
-            key = RSA.importKey(request.session.get('send_key'))
-            private_key_string = key.exportKey('PEM').decode("ascii")
+        key = RSA.importKey(request.session.get('send_key'))
+        private_key_string = key.exportKey('PEM').decode("ascii")
 
-            return render(request, 'demo_encryption.html', {
-                'encryption_algorithm': encryptionAlgorithm,
-                'public_key': public_key_string,
-                'private_key': private_key_string,
-                'username': request.session.get('userName'),
-                'type': request.session.get('type'),
-            })
+        return render(request, 'demo_encryption.html', {
+            'symmetrical_key': request.session.get('symmetrical_key'),
+            'public_key': public_key_string,
+            'private_key': private_key_string,
+            'username': request.session.get('userName'),
+            'type': request.session.get('type'),
+        })
