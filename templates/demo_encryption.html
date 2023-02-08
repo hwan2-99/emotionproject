@@ -77,7 +77,15 @@
     {% endif %}
 
 </nav>
+<div>
+    <textarea id="privateKey" cols="66" rows="16" style="display:none;">
+                -----BEGIN RSA PRIVATE KEY-----MIICXQIBAAKBgQDLZL7JkIAxVOLqtEZr+SjJZYqS59ARp3/Z/l5Q6AOWryyrCJI4A/4RjFiZ2lN2a08WGgZuYrM+rk7mXmxQdAX1aUTXk9xxZX2YrO9g2TMxpJzrdDD6AKbDSqz9TLx2mBuLFKr+dJXX4FSg6GQF9ZAlP/PxuriRMQ5kbnqGPiMCvwIDAQABAoGAMlaw0XouAAeeUbBkbXyxF4dGEK3G1Ve7UNyfwy5pFPYt+/aXGb4DN5ygoRNj7L8KR9IRHWjYK/9AD8v2ysKsZmuXNt23ojkKHq5wirSCpO2vb244ApMQAlvZYdoAeUaYjMyq9RLBsPXh8yLAMrLGU6Yxsv5evRjrHnStW8LcImECQQDwnypVThxZP5d5vxDHV4xFvS0PFucR05TIEtpLvGIGQ8bzol9jz+A4irpIRHnyRfydyJQziS7Svp9EsSlWiOaVAkEA2GR8XZPTXTwtotF4dSSqu0sdERUCyShTAK4/vRjGviH0qITGPk+ZeCQp2ZV0WsY84/6mMRviiBn92+J7hS5TAwJAASRQOB1pxwalOl+svbVtpfsS1qp+KDh/0T89p/RZ5ru1mvxfRYL8BmiqH6OrjHnGjB0ijugMv9VFvja1AoMdzQJBALjo1SUZpunq/Iw/NxHS7Vnyi7oHHERMgvD39VtfCqV6WpiOLOEeH+R78o8NmUngUDP7bIRWcbMfksAMvsRFm4UCQQC3suGb43vEPOv8dGaIX7DxRCuvbgI+3mRn07bZe//iaxiQXphcMJArJB4bpxl+Sdq59miHPhHpTIYGN9fVHYr+-----END RSA PRIVATE KEY-----
+    </textarea>
 
+    <textarea id="publicKey" cols="66" rows="7" style="display:none;">
+                -----BEGIN PUBLIC KEY-----MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDLZL7JkIAxVOLqtEZr+SjJZYqS59ARp3/Z/l5Q6AOWryyrCJI4A/4RjFiZ2lN2a08WGgZuYrM+rk7mXmxQdAX1aUTXk9xxZX2YrO9g2TMxpJzrdDD6AKbDSqz9TLx2mBuLFKr+dJXX4FSg6GQF9ZAlP/PxuriRMQ5kbnqGPiMCvwIDAQAB-----END PUBLIC KEY-----
+    </textarea>
+</div>
 <div style="margin-left: 220px;padding: 30px">
     <div class="col-lg-6 mb-3">
         <h5 class="text-dark mb-3">암호화 알고리즘</h5>
@@ -142,7 +150,7 @@
             function showEncryption() {
 
                 let result = "";
-                if (findEncryptionIndex() == 0 || findEncryptionIndex() == 1) {
+                if (findEncryptionIndex() == 0) {
                     // 대칭키 발급
                     key_string = '{{ symmetrical_key }}';
                     // 대칭 암호화 - JS ENCRYPTION ECB
@@ -151,13 +159,19 @@
                     document.getElementById('output').value = result;
                 }
                 if (findEncryptionIndex() == 1) {
-                    document.getElementById('output').value = result;
+                    // 객체 생성
+                    let crypt = new JSEncrypt();
+                    // 키 설정
+                    crypt.setPrivateKey(document.querySelector("#publicKey").value);
+                    // 암호화
+                    let encryptedText = crypt.encrypt(fileText);
+                    document.getElementById('output').value = encryptedText;
                 }
             }
 
             function showDescription() {
                 let result = "";
-                if (findEncryptionIndex() == 0 || findEncryptionIndex() == 1) {
+                if (findEncryptionIndex() == 0) {
                     // 대칭키 발급
                     key_string = '{{ symmetrical_key }}';
                     // 대칭 암호화 - JS ENCRYPTION ECB
@@ -166,7 +180,12 @@
                     document.getElementById('output').value = result;
                 }
                 if (findEncryptionIndex() == 1) {
-                    document.getElementById('output').value = result;
+                    var crypt = new JSEncrypt();
+                    crypt.setPrivateKey(document.querySelector("#privateKey").value);
+                    var encryptedText = fileText;
+                    // 복호화
+                    var decryptedText = crypt.decrypt(encryptedText);
+                    document.getElementById('output').value = decryptedText;
                 }
             }
         </script>

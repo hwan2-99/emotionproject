@@ -153,18 +153,8 @@ def v2_demo_certification(request):
 
 def v2_demo_encryption(request):
     if request.method == 'GET':
-
-        key = RSA.importKey(request.session.get('receive_key'))
-        public_key = key.public_key()
-        public_key_string = public_key.exportKey('PEM').decode("ascii")
-
-        key = RSA.importKey(request.session.get('send_key'))
-        private_key_string = key.exportKey('PEM').decode("ascii")
-
         return render(request, 'demo_encryption.html', {
-            'symmetrical_key': request.session.get('symmetrical_key'),
-            'public_key': public_key_string,
-            'private_key': private_key_string,
+            'symmetrical_key': "bo7ErxS1avMOtIWR",
             'username': request.session.get('userName'),
             'type': request.session.get('type'),
         })
