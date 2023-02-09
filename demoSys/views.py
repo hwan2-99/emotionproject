@@ -97,6 +97,19 @@ def v2_demo(request):
 def v2_demo_info(request):
     if request.method == 'GET':
         user_email = request.session.get('user_email')
+        gps = request.GET.get('gps')
+        result = requests.get('https://api.ip.pe.kr/')
+        ip = result.text
+        id = request.session.get("user_email")
+        uuid_name = uuid4().hex
+
+        data_json = {
+            "_id": uuid_name,
+            "ip": ip,
+            "Date": str(datetime.datetime.now())
+        }
+        json_data = json.dumps(data_json)
+
         encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=user_email).choice
 
         if encryptionAlgorithm == 1:
