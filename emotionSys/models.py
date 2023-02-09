@@ -3,9 +3,6 @@ from random import randint
 import requests
 from django.db import models
 
-
-# Create your models here.
-
 # Create your models here.
 
 from django.db import models
@@ -24,6 +21,22 @@ class User(models.Model):
 
     class Meta:
         db_table = "user"
+
+class EncryptionAlgorithm(models.Model):
+    id = models.IntegerField(primary_key=True)
+    email = models.CharField(max_length=200)
+    choice = models.IntegerField()
+
+    class Meta:
+        db_table = "encryption_algorithm"
+
+class ChoiceCheck(models.Model):
+    id = models.IntegerField(primary_key=True)
+    email = models.CharField(max_length=200)
+    choice = models.IntegerField()
+
+    class Meta:
+        db_table = "choice_check"
 
 class Emotion(models.Model):
     id = models.AutoField(primary_key=True)
@@ -120,5 +133,4 @@ class Auth_Category(models.Model):
 #                           # "x-ncp-service-secret": {SMS Service Secret},
 #             }
 #             requests.post(url, json=data, headers=headers)
-
 
