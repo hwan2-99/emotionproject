@@ -78,12 +78,14 @@ def v2_demo_login(request):
 
             demoLog.insert_one(userLog)
 
-            return render(request, 'demo_info.html',
-                          {'encryption_algorithm': encryptionAlgorithm,
-                           'symmetrical_key': symmetrical_key,
-                           'username': request.session.get('userName'),
-                           'type': request.session.get('type')
-                           })
+            return redirect('/v2/demo_info')
+
+            # return render(request, 'demo_info.html',
+            #               {'encryption_algorithm': encryptionAlgorithm,
+            #                'symmetrical_key': symmetrical_key,
+            #                'username': request.session.get('userName'),
+            #                'type': request.session.get('type')
+            #                })
         elif encryptionAlgorithm == 2:  # 비대칭키
             # 서버가 데이터를 받을 때 사용할 키 -> 세션에 저장
             key = RSA.generate(3072)
