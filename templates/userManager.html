@@ -207,6 +207,7 @@
                         </ul>
                     </div>
                 </nav>
+
                 <div class="container-fluid">
                     <div class="d-sm-flex justify-content-between align-items-center mb-4">
                         <h3 class="text-dark mb-0">사용자 관리</h3>
@@ -221,43 +222,19 @@
                         </div>
                     </div>
 
-
-
                     <div class="row">
                         <div class="col">
                             <div class="row">
                                 <div class="col-lg-6 mb-4">
                                     <h5 class="text-dark mb-3">사용자 선택</h5>
-{#                                    <table class="table">#}
-{#                                        <thead>#}
-{#                                        <tr>#}
-{#                                            <th scope="col">이메일</th>#}
-{#                                            <th scope="col">이름</th>#}
-{#                                            <th scope="col"></th>#}
-{#                                        </tr>#}
-{#                                        </thead>#}
-{#                                        <tbody>#}
-{#                                        <tr>#}
-{#                                            <td>kim@gmail.com</td>#}
-{#                                            <td>Kim</td>#}
-{#                                            <td><input class="form-check-input" type="radio" name="flexRadioDefault" checked></td>#}
-{#                                        </tr>#}
-{#                                        <tr>#}
-{#                                            <td>young@gmail.com</td>#}
-{#                                            <td>Young</td>#}
-{#                                            <td><input class="form-check-input" type="radio" name="flexRadioDefault"></td>#}
-{#                                        </tr>#}
-{#                                        <tr>#}
-{#                                            <td>larry@gmail.com</td>#}
-{#                                            <td>Larry</td>#}
-{#                                            <td><input class="form-check-input" type="radio" name="flexRadioDefault"></td>#}
-{#                                        </tr>#}
-{#                                        </tbody>#}
-{#                                    </table>#}
-                                    <select class="form-select" multiple aria-label="multiple select example">
-                                        <option value="1" selected>kim@gmail.com</option>
-                                        <option value="2">young@gmail.com</option>
-                                        <option value="3">larry@gmail.com</option>
+                                    <select class="form-select user-select" multiple aria-label="multiple select example">
+                                                {% for user in users %}
+                                                    {% if users.0.email == user.email %}
+                                                        <option selected>{{user.email}}</option>
+                                                    {% else %}
+                                                        <option>{{user.email}}</option>
+                                                    {% endif %}
+                                                {% endfor %}
                                     </select>
                                 </div>
                                 <div class="col-lg-6 mb-3">
@@ -271,35 +248,58 @@
                                         </thead>
                                         <tbody>
                                         <tr>
-                                            <td>질문 답변 재인증</td>
-                                            <td><input class="form-check-input" type="radio" name="certification" checked></td>
-                                        </tr>
-                                        <tr>
                                             <td>감정 기반 재인증</td>
-                                            <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% if initialization.0 == 1 %}
+                                                <td><input class="form-check-input" type="radio" name="certification" checked></td>
+                                            {% else %}
+                                                <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% endif %}
                                         </tr>
                                         <tr>
                                             <td>이메일 재인증</td>
-                                            <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% if initialization.0 == 2 %}
+                                                <td><input class="form-check-input" type="radio" name="certification" checked></td>
+                                            {% else %}
+                                                <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% endif %}
                                         </tr>
                                         <tr>
-                                            <td>위치 기반 재인증(현재 미운용)</td>
-                                            <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            <td>위치 기반 재인증</td>
+                                            {% if initialization.0 == 3 %}
+                                                <td><input class="form-check-input" type="radio" name="certification" checked></td>
+                                            {% else %}
+                                                <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% endif %}
                                         </tr>
                                         <tr>
                                             <td>휴대폰 번호 재인증</td>
-                                            <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% if initialization.0 == 4 %}
+                                                <td><input class="form-check-input" type="radio" name="certification" checked></td>
+                                            {% else %}
+                                                <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% endif %}
+
                                         </tr>
                                         <tr>
                                             <td>패턴 재인증</td>
-                                            <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% if initialization.0 == 5 %}
+                                                <td><input class="form-check-input" type="radio" name="certification" checked></td>
+                                            {% else %}
+                                                <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% endif %}
+
                                         </tr>
                                         <tr>
                                             <td>질문 답변 재인증</td>
-                                            <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% if initialization.0 == 6 %}
+                                                <td><input class="form-check-input" type="radio" name="certification" checked></td>
+                                            {% else %}
+                                                <td><input class="form-check-input" type="radio" name="certification"></td>
+                                            {% endif %}
                                         </tr>
                                         </tbody>
                                     </table>
+
                                 </div>
                                 <div class="col-lg-6 mb-3">
                                     <h5 class="text-dark mb-3">암호화 알고리즘</h5>
@@ -313,11 +313,19 @@
                                         <tbody>
                                         <tr>
                                             <td>대칭키</td>
-                                            <td><input class="form-check-input" type="radio" name="encryption" checked></td>
+                                            {% if initialization.1 == 1 %}
+                                                <td><input class="form-check-input" type="radio" name="encryption" checked></td>
+                                            {% else %}
+                                                <td><input class="form-check-input" type="radio" name="encryption"></td>
+                                            {% endif %}
                                         </tr>
                                         <tr>
                                             <td>비대칭키</td>
-                                            <td><input class="form-check-input" type="radio" name="encryption"></td>
+                                            {% if initialization.1 == 2 %}
+                                                <td><input class="form-check-input" type="radio" name="encryption" checked></td>
+                                            {% else %}
+                                                <td><input class="form-check-input" type="radio" name="encryption"></td>
+                                            {% endif %}
                                         </tr>
                                         </tbody>
                                     </table>
@@ -328,17 +336,125 @@
                 </div>
             </div>
 
+        <!-- synchronizing functions  -->
+            <script>
+                //사용자 변경
+                async function changeUser(email){
+                    const settings = await getSettingsOfUserNamed(email);
+                    const certifications = document.getElementsByName("certification");
+                    const encryptions = document.getElementsByName("encryption");
 
+                    for(let i = 0; i <certifications.length; i++){
+                        if ('radio' == certifications[i].getAttribute('type')){
+                            if( i+1 == settings[0] ){
+                                certifications[i].checked = true;
+                            }else{
+                                certifications[i].checked = false;
+                            }
+                        }
+                    }
 
+                    for(let i = 0; i <encryptions.length; i++){
+                        if ('radio' == encryptions[i].getAttribute('type')){
+                            if( i+1 == settings[1] ){
+                                encryptions[i].checked = true;
+                            }else{
+                                encryptions[i].checked = false;
+                            }
+                        }
+                    }
+                }
+                async function getSettingsOfUserNamed(email){ // 설정 가져오기
+                    let result = [];
+                    await $.ajax({
+                        url: 'choice-check',
+                        type: 'get',
+                        data: {email: email},
+                        success: function onData(data) {
+                            result.push(data);
+                        },
+                        error: function onError(error) {
+                            console.error(error);
+                        }
+                    });
+                    await $.ajax({
+                        url: 'encryption-algorithm',
+                        type: 'get',
+                        data: {email: email},
+                        success: function onData(data) {
+                            result.push(data);
+                        },
+                        error: function onError(error) {
+                            console.error(error);
+                        }
+                    });
+                    if(result.length != 2){
+                        throw new Error("실패!");
+                    }else{
+                        return result;
+                    }
+                }
 
+                //설정 변경
+                async function changeSetting(e,settingNum){
+                    const emailOfSelectedUser = getEmailOfSelectedUser();
+                    let url = null
 
+                    if (e.target.name === 'certification'){
+                        url = 'choice-check'
+                    }else if(e.target.name === 'encryption'){
+                        url = 'encryption-algorithm'
+                    }
 
+                    await $.ajax({
+                        url: url,
+                        type: 'patch',
+                        data: {email: emailOfSelectedUser, settingNum : settingNum},
+                        success: function onData(data) {
+                            console.log(data);
+                        },
+                        error: function onError(error) {
+                            console.error(error);
+                        }
+                    });
 
+                }
+                //선택된 사용자의 이메일 얻기
+                function getEmailOfSelectedUser() {
+                    const userSelection = document.querySelector(".user-select").children;
+                    for(let i = 0 ; i < userSelection.length ; i++){
+                        if(userSelection[i].selected === true){
+                            return userSelection[i].innerText;
+                        }
+                    }
+                    return null;
+                }
+                //초기화
+                initialization();
+                function initialization() {
+                    const userSelection = document.querySelector(".user-select").children;
+                    const certifications = document.getElementsByName("certification");
+                    const encryptions = document.getElementsByName("encryption");
 
+                    for(let i = 0 ; i < userSelection.length ; i++){
+                        if('OPTION' == userSelection[i].tagName){
+                            userSelection[i].addEventListener('click',()=>{changeUser(userSelection[i].innerText)})
+                        }
+                    }
 
+                    for(let i = 0; i <certifications.length; i++){
+                        if ('radio' == certifications[i].getAttribute('type')){
+                            certifications[i].addEventListener('click',(e)=>{changeSetting(e,i+1)})
+                        }
+                    }
 
-
-
+                    for (let i = 0; i < encryptions.length; i++) {
+                        if ('radio' === encryptions[i].getAttribute('type')) {
+                            encryptions[i].addEventListener('click',(e)=>{changeSetting(e,i+1)})
+                        }
+                    }
+                }
+            </script>
             <footer class="bg-white sticky-footer">
                 <div class="container my-auto">
                     <div class="text-center my-auto copyright"><span>Copyright © Brand 2021</span></div>
@@ -349,73 +465,73 @@
             function emotion() {
                 const video = document.getElementById("video");
 
-            // face api 허용
-            Promise.all([
-              faceapi.nets.tinyFaceDetector.loadFromUri("{% static 'assets/models' %}"),
-              faceapi.nets.faceLandmark68Net.loadFromUri("{% static 'assets/models' %}"),
-              faceapi.nets.faceRecognitionNet.loadFromUri("{% static 'assets/models' %}"),
-              faceapi.nets.faceExpressionNet.loadFromUri("{% static 'assets/models' %}"),
-            ]).then(startVideo);
+                // face api 허용
+                Promise.all([
+                  faceapi.nets.tinyFaceDetector.loadFromUri("{% static 'assets/models' %}"),
+                  faceapi.nets.faceLandmark68Net.loadFromUri("{% static 'assets/models' %}"),
+                  faceapi.nets.faceRecognitionNet.loadFromUri("{% static 'assets/models' %}"),
+                  faceapi.nets.faceExpressionNet.loadFromUri("{% static 'assets/models' %}"),
+                ]).then(startVideo);
 
-            // 비디오 시작 함수
-            function startVideo() {
-              navigator.mediaDevices
-                .getUserMedia({ video: true })
-                .then(function (stream) {
-                  video.srcObject = stream;
-                })
-                .catch(function (err) {
-                  console.log(err);
+                // 비디오 시작 함수
+                function startVideo() {
+                  navigator.mediaDevices
+                    .getUserMedia({ video: true })
+                    .then(function (stream) {
+                      video.srcObject = stream;
+                    })
+                    .catch(function (err) {
+                      console.log(err);
+                    });
+                }
+                document.getElementById("voice_loading").style.display = 'block';
+                // 비디오 사이즈
+                video.addEventListener("playing", () => {
+                  const canvas = faceapi.createCanvasFromMedia(video);
+                  document.body.append(canvas);
+                  const displaySize = { width: video.width, height: video.height, style: "visibility:hidden"};
+                  faceapi.matchDimensions(canvas, displaySize);
+
                 });
-            }
-            document.getElementById("voice_loading").style.display = 'block';
-            // 비디오 사이즈
-            video.addEventListener("playing", () => {
-              const canvas = faceapi.createCanvasFromMedia(video);
-              document.body.append(canvas);
-              const displaySize = { width: video.width, height: video.height, style: "visibility:hidden"};
-              faceapi.matchDimensions(canvas, displaySize);
 
-            });
+                // 비동기 처리 얼굴 표정 값
+                setTimeout(async () => {
+                    document.getElementById("face_loading").style.display = 'block';
 
-            // 비동기 처리 얼굴 표정 값
+                    document.getElementById("voice_loading").style.display = 'none';
+                    const detections = await faceapi
+                      .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+                      .withFaceLandmarks()
+                      .withFaceExpressions();
 
-            setTimeout(async () => {
-                document.getElementById("face_loading").style.display = 'block';
-
-                document.getElementById("voice_loading").style.display = 'none';
-                const detections = await faceapi
-                  .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-                  .withFaceLandmarks()
-                  .withFaceExpressions();
-
-                var data = detections[0].expressions.fearful;
+                    var data = detections[0].expressions.fearful;
 
 
-                console.log(parseFloat(data).toFixed(8));
+                    console.log(parseFloat(data).toFixed(8));
 
-                fear = parseFloat(detections[0].expressions.fearful).toFixed(8)
-                if(fear > 0.15) {
-                    alert("이상 징후가 감지되었습니다. 추가인증을 해주세요....")
-                    window.location.href = '/v2/fail';
-                }else{
+                    fear = parseFloat(detections[0].expressions.fearful).toFixed(8)
+                    if(fear > 0.15) {
+                        alert("이상 징후가 감지되었습니다. 추가인증을 해주세요....")
+                        window.location.href = '/v2/fail';
+                    }else{
 
-                    alert("감정 기반 재인증이 성공하였습니다.")
-                    window.location.href = '/v2/main';
+                        alert("감정 기반 재인증이 성공하였습니다.")
+                        window.location.href = '/v2/main';
+                    }
+
+                }, 3000);
+                document.getElementById("face_loading").style.display = 'none';
+                //미디어 허용
+                if (navigator.mediaDevices.getUserMedia) {
+                  navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function (stream) {
+                      video.srcObject = stream;
+                    })
+                    .catch(function (err0r) {
+                      console.log("Something went wrong!");
+                    });
                 }
 
-              }, 3000);
-            document.getElementById("face_loading").style.display = 'none';
-            //미디어 허용
-            if (navigator.mediaDevices.getUserMedia) {
-              navigator.mediaDevices.getUserMedia({ video: true })
-                .then(function (stream) {
-                  video.srcObject = stream;
-                })
-                .catch(function (err0r) {
-                  console.log("Something went wrong!");
-                });
-            }
             }
 
         </script>

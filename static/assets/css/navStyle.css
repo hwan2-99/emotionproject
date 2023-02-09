@@ -1,0 +1,25 @@
+nav{
+    width:220px;
+    background-color:#eee;
+    border-right:1px solid #ddd;
+    /* height:100% 그냥 적용 안됨. 부모개념이 있어야 채워질 수 있음 */
+
+    position:fixed; /*공중에 떠서 공간을 차지하지 않음*/
+    height:100% /*fixed를 해서 높이 100%가 가능해짐*/
+}
+h1{ font-size:18px;  padding-top:20px; text-align: center }
+.menu {}
+.menu li {}
+
+li {list-style:none; }
+a{text-decoration: none}
+/*메뉴*/
+li a {
+    height:30px;
+    line-height:30px;
+    display:block;
+    font-size:15px;
+    color:#555;
+    text-align: center;
+}
+li a:hover { background-color:yellowgreen; color:white;}

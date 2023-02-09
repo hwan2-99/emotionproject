@@ -1,0 +1,147 @@
+{% load static %}
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'assets/bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i">
+    <link rel="stylesheet" href="{% static 'assets/fonts/fontawesome-all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/fonts/font-awesome.min.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/fonts/fontawesome5-overrides.min.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/untitled.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/styles.css' %}">
+
+    <script src='{% static "assets/js/jquery.min.js" %}'></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js" integrity="sha384-b5kHyXgcpbZJO/tY9Ul7kGkf1S0CWuKcCD38l8YkeH8z8QjE0GmW1gYU5S9FOnJ0" crossorigin="anonymous"></script>
+    <style>
+        nav {
+            width: 220px;
+            background-color: #eee;
+            border-right: 1px solid #ddd;
+            /* height:100% 그냥 적용 안됨. 부모개념이 있어야 채워질 수 있음 */
+
+            position: fixed; /*공중에 떠서 공간을 차지하지 않음*/
+            height: 100% /*fixed를 해서 높이 100%가 가능해짐*/
+        }
+
+        h1 {
+            font-size: 18px;
+            padding-top: 20px;
+            text-align: center
+        }
+
+        .menu {
+        }
+
+        .menu li {
+        }
+
+        li {
+            list-style: none;
+        }
+
+        a {
+            text-decoration: none
+        }
+
+        /*메뉴*/
+        li a {
+            height: 30px;
+            line-height: 30px;
+            display: block;
+            font-size: 15px;
+            color: #555;
+            text-align: center;
+        }
+
+        li a:hover {
+            background-color: yellowgreen;
+            color: white;
+        }
+
+        .nav-link {
+            height: 100%
+        }
+    </style>
+
+    <title>Document</title>
+</head>
+<body>
+<nav>
+    <h1>감성정보 기반 상황인식 보안 서비스 모듈</h1>
+    <br>
+    {% if username %}
+        <li><a href="/v2/demo_info"> 사용자 상황정보 수집 및 조회</a></li>
+        <li><a href="/v2/demo_certification" style="background-color:yellowgreen; color:white;">사용자 인증 서비스</a></li>
+        <li><a href="/v2/demo_encryption">데이터 암복호화 서비스</a></li>
+        <li style="margin-top: 100%"><a href="/v2/demo">로그아웃</a></li>
+        <li style="margin-top: 100%"><a href="/v2/demo">로그인</a></li>
+    {% endif %}
+
+</nav>
+<div style="margin-left: 220px;padding: 30px">
+    <div class="container-fluid">
+        <div class="d-sm-flex justify-content-between align-items-center mb-4">
+            <h3 class="text-dark mb-0">재인증 목록</h3>
+        </div>
+        <div class="row">
+            <div class="col-lg-7 col-xl-8">
+                <div class="card shadow mb-4"></div>
+            </div>
+            <div class="col-lg-5 col-xl-4">
+                <div class="card shadow mb-4"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="row">
+<!--                        <div onclick="location.href='/v2/emailCheck'" class="col-lg-6 mb-4">-->
+<!--                            <div class="card textwhite bg-gray-300 text-white shadow BackgroundColorBlue">-->
+<!--                                <div class="card-body BackgroundColorBlue">-->
+<!--                                    <p class="m-0">이메일 재인증</p>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                        </div>-->
+                        <div onclick="location.href='/v2/demo'" class="col-lg-6 mb-4">
+                            <div class="card textwhite bg-info text-white shadow">
+                                <div class="card-body">
+                                    <p class="m-0">ID/PW 재인증</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div onclick="location.href='/v2/phoneCheck'" class="col-lg-6 mb-4">
+                            <div class="card textwhite bg-info text-white shadow">
+                                <div class="card-body">
+                                    <p class="m-0">휴대폰 번호 재인증</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div onclick="location.href='/v2/patternCheck'" class="col-lg-6 mb-4">
+                            <div class="card textwhite bg-info text-white shadow">
+                                <div class="card-body">
+                                    <p class="m-0">패턴 재인증</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div onclick="location.href='/v2/questionCheck'" class="col-lg-6 mb-4">
+                            <div class="card textwhite bg-info text-white shadow">
+                                <div class="card-body">
+                                    <p class="m-0">질문 답변 재인증</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div onclick="location.href='/v2/emailCheck'" class="col-lg-6 mb-4">
+                            <div class="card textwhite bg-info text-white shadow">
+                                <div class="card-body">
+                                    <p class="m-0">이메일 재인증</p>
+                                </div>
+                            </div>
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

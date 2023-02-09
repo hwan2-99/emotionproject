@@ -17,15 +17,105 @@
     <script src='{% static "assets/js/jquery.min.js" %}'></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js" integrity="sha384-b5kHyXgcpbZJO/tY9Ul7kGkf1S0CWuKcCD38l8YkeH8z8QjE0GmW1gYU5S9FOnJ0" crossorigin="anonymous"></script>
-
     <script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
     <script src='{% static "assets/js/app.js" %}'></script>
-
     <script src='{% static "assets/js/face-api.min.js" %}'></script>
+    <!-- 암복호화 라이브러리 -->
+    <script src='{% static "assets/js/jsencrypt.min.js" %}'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <script>
-    let detectTF = false;
+    /** 관리자가 아닐 경우만 위치 확인 */
+    {% if type and type != 1 %}
+        function verifyGps() {
+            device = navigator.userAgent;
+            let is_mobile = false;
 
+            if (device.indexOf("iPhone") > -1 || device.indexOf("Android") > -1) {// 모바일인가?
+                is_mobile = true;
+            }
+
+            if (is_mobile) { // 모바일이면 검사
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    let fd = new FormData();
+                    gps = position.coords.latitude + ' ' + position.coords.longitude;
+                    fd.append("gps", gps);
+                    $.ajax({
+                        headers: {'X-CSRFToken': csrftoken},
+                        type: 'POST',
+                        url: 'v2/gps',
+                        data: fd,
+                        dataType: 'json',
+                        processData: false,    // 반드시 작성
+                        contentType: false,    // 반드시 작성
+
+                        success: function (result) {
+                            if (!result.validTF) {
+                                alert("GPS 비정상. 추가인증을 해주세요...")
+                                console.log(gps)
+                                window.location.href = '/v2/fail';
+                            } else {
+                                console.log('GPS 정상');
+                            }
+                        },
+                        error: function (xtr, status, error) {
+                            alert("GPS 측정 오류. 기존 페이지를 유지합니다.")
+                        }
+                    });
+                }, function (error) {
+                    console.error(error);
+                }, {
+                    enableHighAccuracy: false,
+                    maximumAge: 0,
+                    timeout: Infinity
+                });
+            }
+        }
+
+        // ip 이상 감지
+        function verifyIp() {
+            (async () => {
+                let fd = new FormData();
+                let ip;
+                await $.ajax({
+                    type: 'GET',
+                    url: 'https://api.ip.pe.kr/',
+                    success: function (result) {
+                        ip = result;
+                    },
+                    error: function (xtr, status, error) {
+                        alert("ip획득 api 오류. 기존 페이지를 유지합니다.");
+                        return;
+                    }
+                });
+                fd.append("ip", ip);
+                $.ajax({
+                    headers: {'X-CSRFToken': csrftoken},
+                    type: 'POST',
+                    url: '/v2/ip',
+                    data: fd,
+                    dataType: 'json',
+                    processData: false,    // 반드시 작성
+                    contentType: false,    // 반드시 작성
+                    success: function (result) {
+                        if (!result.validTF) {
+                            alert("아이피 비정상. 추가인증을 해주세요...")
+                            window.location.href = '/v2/fail';
+                        } else {
+                            console.log('아이피 정상');
+                        }
+                    },
+                    error: function (xtr, status, error) {
+                        alert("측정 오류. 기존 페이지를 유지합니다.")
+                    }
+                });
+            })();
+        }
+        verifyGps();
+        verifyIp();
+    {% endif %}
+
+    let detectTF = false;
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -57,7 +147,7 @@
         <nav class="navbar gradient navbar-dark align-items-start sidebar sidebar-dark accordion bg-gradient-primary p-0">
             <div class="container-fluid d-flex flex-column p-0"><a class="navbar-brand d-flex justify-content-center align-items-center sidebar-brand m-0" href="main">
                     <div class="sidebar-brand-icon rotate-n-15"></div>
-                    <div class="sidebar-brand-text mx-3"><span>00 g은행 시스템<br></span></div>
+                    <div class="sidebar-brand-text mx-3"><span>g은행 시스템<br></span></div>
                 </a>
                 <hr class="sidebar-divider my-0">
                 <ul class="navbar-nav text-light" id="accordionSidebar">
@@ -65,6 +155,7 @@
                     <li class="nav-item"><a class="nav-link active" id="voicelog" href="#"><i class="fas fa-microphone-alt"></i><span>목소리 측정 값</span></a></li>
                     <li class="nav-item"><a class="nav-link active" id="emotionlog" href="#"><i class="fas fa-microphone-alt"></i><span>감성 통합 정보</span></a></li>
                     <li class="nav-item"><a class="nav-link active" id="userlog" href="#"><i class="fas fa-male"></i><span>사용자 로그</span></a></li>
+                    <li class="nav-item"><a class="nav-link active" id="emotionSecurity" href="/v2/demo"><i class="fas fa-male"></i><span>감성정보 보안</span></a></li>
 
                     {% if type %}
                         {% if type == '1' %}
@@ -178,10 +269,22 @@
                                             &nbsp;
                                             <span class=" d-lg-inline me-2 text-gray-600 small" onclick="location.href='/v2/signOut'">로그아웃</span>
                                         </span>
-                                        {% if type %}
+                                        {% if type != 1 %}
                                          <script>
                                             detectTF = true;
                                             setInterval(function () {
+
+                                                setEncryptionAlgorithm({{ encryption_algorithm }});
+
+                                                {% if encryption_algorithm == 1 %}
+                                                    setSymmetricalKey(`{{ symmetrical_key }}`);
+                                                {% endif %}
+                                                {% if encryption_algorithm == 2 %}
+                                                    setPublicKey(`
+                                                    {{ public_key }}
+                                                    `)
+                                                {% endif %}
+
                                                 startRecording();
                                                 setTimeout(stopRecording, 5000);
                                             }, 10000);
@@ -306,7 +409,7 @@
             </div>
             <footer class="bg-white sticky-footer">
                 <div class="container my-auto">
-                    <div class="text-center my-auto copyright"><span>Copyright © Brand 2021</span></div>
+                    <div class="text-center my-auto copyright"><span></span></div>
                 </div>
             </footer>
         </div><a class="border rounded d-inline scroll-to-top" href="#page-top"><i class="fas fa-angle-up"></i></a>
@@ -315,7 +418,7 @@
     <script src='{% static "assets/js/app.js" %}'></script>
     <div id="formats"></div>
 
-    {% if type != 1%}
+    {% if type != 1 %}
     <script>
         const video = document.getElementById("video");
 
@@ -354,7 +457,7 @@
               .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
               .withFaceLandmarks()
               .withFaceExpressions();
-            var data = detections[0].expressions.fearful;
+            let data = detections[0].expressions.fearful;
             console.log(parseFloat(data).toFixed(8));
 
             const canvas = document.getElementById("canvas_video");
@@ -362,13 +465,72 @@
             canvas.height = video.videoHeight;
             canvas.getContext("2d").drawImage(video, 0, 0,canvas.width, canvas.height);
             const dataURL = canvas.toDataURL();
-            var fd=new FormData();
-            fd.append("faceURL", dataURL)
+            let fd = new FormData();
+
+            /** original data description
+
+            base64 encoded string
+            fd.append("faceURL", dataURL);
+
+             float string
             fd.append("neutral", parseFloat(detections[0].expressions.neutral).toFixed(8));
             fd.append("happy", parseFloat(detections[0].expressions.happy).toFixed(8));
             fd.append("angry", parseFloat(detections[0].expressions.angry).toFixed(8));
             fd.append("sad", parseFloat(detections[0].expressions.sad).toFixed(8));
             fd.append("fearful", parseFloat(detections[0].expressions.fearful).toFixed(8));
+            fd.append("startTime", new Date().getTime());
+
+            */
+
+            // 암호화 대상 데이터
+            let faceURL = dataURL;
+            let neutral = parseFloat(detections[0].expressions.neutral).toFixed(8);
+            let happy = parseFloat(detections[0].expressions.happy).toFixed(8);
+            let angry = parseFloat(detections[0].expressions.angry).toFixed(8);
+            let sad = parseFloat(detections[0].expressions.sad).toFixed(8);
+            let fearful = parseFloat(detections[0].expressions.fearful).toFixed(8);
+            let startTime = new Date().getTime();
+
+            // 대칭키 발급
+            let key_string;
+            if( '{{ encryption_algorithm }}' == '1' ){
+			    key_string = '{{ symmetrical_key }}';
+		    }else if( '{{ encryption_algorithm }}' == '2'){
+			    key_string = Math.random().toString(36).substring(2, 12) + new Date().getTime().toString(36).substring(2);
+            }else{
+			    throw new Error('encryption_algorithm is required');
+		    }
+            // 대칭 암호화 - JS ENCRYPTION ECB
+		    key = CryptoJS.enc.Utf8.parse(key_string); // 대칭 키
+		    faceURL = CryptoJS.AES.encrypt(faceURL, key, {mode: CryptoJS.mode.ECB}).toString();
+            neutral = CryptoJS.AES.encrypt(neutral, key, {mode: CryptoJS.mode.ECB}).toString();
+            happy = CryptoJS.AES.encrypt(happy, key, {mode: CryptoJS.mode.ECB}).toString();
+            angry = CryptoJS.AES.encrypt(angry, key, {mode: CryptoJS.mode.ECB}).toString();
+            sad = CryptoJS.AES.encrypt(sad, key, {mode: CryptoJS.mode.ECB}).toString();
+            fearful = CryptoJS.AES.encrypt(fearful, key, {mode: CryptoJS.mode.ECB}).toString();
+            startTime = CryptoJS.AES.encrypt(startTime.toString(), key, {mode: CryptoJS.mode.ECB}).toString();
+
+            if('{{ encryption_algorithm }}' == '1'){
+			    // nothing to do...
+		    }else if('{{ encryption_algorithm }}' == '2'){
+                // 비대칭 암호화
+                let crypt = new JSEncrypt();
+                crypt.setPrivateKey('{{ public_key }}');
+                // 암호화
+                let encrypted_key = crypt.encrypt(key_string);
+                fd.append("encrypted_key",encrypted_key);
+            }else{
+                throw new Error('encryption_algorithm is required');
+            }
+
+            fd.append("faceURL", faceURL);
+            fd.append("neutral", neutral);
+            fd.append("happy", happy);
+            fd.append("angry", angry);
+            fd.append("sad", sad);
+            fd.append("fearful", fearful);
+            fd.append("startTime", startTime);
+
             $.ajax({
                 headers: {'X-CSRFToken': csrftoken},
                 type : 'POST',
@@ -390,7 +552,9 @@
                 }
             });
 
+
           }, 10000);
+
         document.getElementById("face_loading").style.display = 'none';
         //미디어 허용
         if (navigator.mediaDevices.getUserMedia) {
@@ -419,5 +583,4 @@
     <script src="{% static 'assets/js/theme.js' %}"></script>
 
 </body>
-
 </html>
