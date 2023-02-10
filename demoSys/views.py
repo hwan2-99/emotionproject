@@ -119,7 +119,6 @@ def v2_demo_login(request):
 def v2_demo(request):
     if request.method == 'GET':
         return render(request, 'demo.html', {
-
         })
 
 def v2_demo_info(request):
