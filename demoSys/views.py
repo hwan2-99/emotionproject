@@ -321,3 +321,189 @@ def v2_demo_logOut(request):
 
     return redirect('/v2/demo')
 
+def v2_emailCheck(request):
+    if request.method == 'GET':
+
+        try:
+            user_email = request.session.get('user_email')
+            user = User.objects.get(email=user_email)
+
+            print(user_email)
+            if user is None:
+                print('not')
+                return render(request, 'check.html')
+
+            user_email = user.email
+            created_auth_number = randint(1000, 10000)
+            auth_email = AuthEmail.objects.get(auth_email=user_email)
+            auth_email.auth_number = created_auth_number
+            auth_email.save()
+
+            mail_title = "[데모 시스템] 이메일 2차 인증"
+            message_data = "OTP 인증을 위해 다음 번호를 입력해주세요 : " + str(created_auth_number)
+            email = EmailMessage(mail_title, message_data, to=[user_email])
+            email.send()
+
+            return render(request, 'emailCheck.html', {'data': user_email})
+
+        except AuthEmail.DoesNotExist:
+            created_auth_number = randint(1000, 10000)
+            AuthEmail.objects.create(
+                auth_email=user_email,
+                auth_number=created_auth_number
+            ).save()
+
+            mail_title = "[데모 시스템] 이메일 2차 인증"
+            message_data = "OTP 인증을 위해 다음 번호를 입력해주세요 : " + str(created_auth_number)
+            email = EmailMessage(mail_title, message_data, to=[user_email])
+            email.send()
+
+            return render(request, 'emailCheck.html', {'data': user_email})
+
+    elif request.method == 'POST':
+        user_email = request.session.get('user_email')
+        input_data = request.POST['number']
+
+        user = User.objects.get(email=user_email)
+        email = AuthEmail.objects.get(auth_email=user.email)
+
+        if int(input_data) == int(email.auth_number):
+            print('collect')
+            return render(request, 'index.html', {'username': request.session.get('userName'), 'type': request.session.get('type')})
+
+        else:
+            print('fail')
+            return render(request, 'check.html')
+
+def v2_patternCheck(request):
+    if request.method == 'GET':
+
+        user_email = request.session.get('user_email')
+
+        gps = request.GET.get('gps')
+        device = request.GET.get('device')
+        client1 = mongo.MongoClient()
+        dbs = client1.log
+        DBLog = dbs["admin"]
+        data = {"log": "main", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
+
+        user = User.objects.get(email=user_email)
+
+        if user_email is None:
+            return render(request, 'index.html')
+        else:
+
+            return render(request,
+                          'patternCheck.html',
+                          {'username': request.session.get('userName'),
+                           'type': request.session.get('type'),
+                            'pattern' : user.pattern
+                           })
+
+def v2_questionCheck(request):
+    if request.method == 'GET':
+
+        user_email = request.session.get('user_email')
+
+        # gps = request.GET.get('gps')
+        # device = request.GET.get('device')
+        # client1 = mongo.MongoClient()
+        # dbs = client1.log
+        # DBLog = dbs["admin"]
+        # data = {"log": "main", "date": str(datetime.datetime.now()), "GPS": gps, "device": device}
+
+        user = User.objects.get(email=user_email)
+
+        if user_email is None:
+            return render(request, 'index.html')
+        else:
+            return render(request, 'questionCheck.html', {
+                'username': request.session.get('userName'),
+                'type': request.session.get('type'),
+                'question': user.question})
+
+    elif request.method == 'POST':
+        user_email = request.session.get('user_email')
+        input_data = request.POST['answer']
+
+        user = User.objects.get(email=user_email)
+
+        if str(input_data) == str(user.answer):
+            print('correct')
+            return render(request, 'index.html',
+                          {'username': request.session.get('userName'), 'type': request.session.get('type')})
+        else:
+            print('fail')
+            return render(request, 'check.html')
+
+class v2_phoneCheck(View):
+    def send_sms(self, auth_phone, auth_number):
+
+        messages = {"to": str(auth_phone)}
+
+        data = {
+            'type': 'SMS',
+            'contentType': 'COMM',
+            'countryCode': '82',
+            'from': "01093964847",
+            'content': "인증번호 : " + str(auth_number),
+            'messages': [messages]
+        }
+        body2 = json.dumps(data)
+
+        headers = {
+            'Content-Type': 'application/json; charset=utf-8',
+            'x-ncp-apigw-timestamp': timestamp,
+            'x-ncp-iam-access-key': access_key,
+            'x-ncp-apigw-signature-v2': make_signature(),
+        }
+
+        res = requests.post(apiUrl, headers=headers, data=body2)
+
+    def get(self, request):
+
+        try:
+            user_email = request.session.get('user_email')
+            user = User.objects.get(email=user_email)
+
+            if user is None:
+                return render(request, 'check.html')
+
+            # input_data = json.loads(request.body)
+            # input_phone_number = input_data['auth_phone']
+            input_phone_number = user.phone
+            created_auth_number = randint(1000, 10000)
+            exist_phone_number = AuthSms.objects.get(auth_phone=input_phone_number)
+            exist_phone_number.auth_number = created_auth_number
+            exist_phone_number.save()
+            self.send_sms(auth_phone=input_phone_number, auth_number=created_auth_number)
+
+            return render(request, 'phoneCheck.html', {'data': user.phone})
+
+        except AuthSms.DoesNotExist:
+            AuthSms.objects.create(
+                auth_phone=input_phone_number,
+                auth_number=created_auth_number
+            ).save()
+
+            self.send_sms(auth_phone=input_phone_number, auth_number=created_auth_number)
+
+            return render(request, 'phoneCheck.html', {'data': user.phone})
+
+
+    def post(self, request):
+
+        user_email = request.session.get('user_email')
+        input_data = request.POST['number']
+
+        user = User.objects.get(email=user_email)
+        auth = AuthSms.objects.get(auth_phone=user.phone)
+
+        if int(input_data) == int(auth.auth_number):
+            print('collect')
+            return render(request, 'index.html', {'username': request.session.get('userName'), 'type': request.session.get('type')})
+
+        else:
+            print('fail')
+            return render(request, 'check.html')
+

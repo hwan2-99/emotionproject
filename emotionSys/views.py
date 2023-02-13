@@ -825,13 +825,16 @@ def v2_questionCheck(request):
 
         user = User.objects.get(email=user_email)
 
+        print(input_data)
+        print(user.answer)
+
         if str(input_data) == str(user.answer):
             print('correct')
             return render(request, 'index.html',
                           {'username': request.session.get('userName'), 'type': request.session.get('type')})
         else:
             print('fail')
-            return render(request, 'check.html')
+            return render(request, 'check.html', {'username': request.session.get('userName'), 'type': request.session.get('type')})
 
 class v2_phoneCheck(View):
     def send_sms(self, auth_phone, auth_number):
