@@ -400,6 +400,29 @@ def v2_patternCheck(request):
                             'pattern' : user.pattern
                            })
 
+timestamp = int(time.time() * 1000)
+timestamp = str(timestamp)
+
+url = "https://sens.apigw.ntruss.com"
+requestUrl1 = "/sms/v2/services/"
+requestUrl2 = "/messages"
+serviceId = "ncp:sms:kr:266490177325:dsu_emotion"
+access_key = "QRqgBlLhOPVszA8iAyXJ"
+
+uri = requestUrl1 + serviceId + requestUrl2
+apiUrl = url + uri
+
+def make_signature():
+    secret_key = "X8bxpHlTti6oFR3dg7cND3WwqquCV5lIb7OGy1qT"
+    secret_key = bytes(secret_key, 'UTF-8')
+    method = "POST"
+    message = method + " " + uri + "\n" + timestamp + "\n" + access_key
+    message = bytes(message, 'UTF-8')
+
+    key = base64.b64encode(hmac.new(secret_key, message, digestmod=hashlib.sha256).digest())
+
+    return key
+
 def v2_questionCheck(request):
     if request.method == 'GET':
 
@@ -430,11 +453,13 @@ def v2_questionCheck(request):
 
         if str(input_data) == str(user.answer):
             print('correct')
-            return render(request, 'index.html',
-                          {'username': request.session.get('userName'), 'type': request.session.get('type')})
+            return redirect('./demo_certification')
         else:
             print('fail')
-            return render(request, 'check.html')
+            return render(request, 'questionCheck.html', {
+                'username': request.session.get('userName'),
+                'type': request.session.get('type'),
+                'question': user.question})
 
 class v2_phoneCheck(View):
     def send_sms(self, auth_phone, auth_number):
