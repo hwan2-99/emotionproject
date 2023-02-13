@@ -831,7 +831,7 @@ def v2_questionCheck(request):
                           {'username': request.session.get('userName'), 'type': request.session.get('type')})
         else:
             print('fail')
-            return render(request, 'check.html')
+            return redirect('/v2/questionCheck')
 
 class v2_phoneCheck(View):
     def send_sms(self, auth_phone, auth_number):
