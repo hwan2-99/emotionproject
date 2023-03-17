@@ -12,4 +12,4 @@ urlpatterns = [
     path('v2/phoneCheck', views.v2_phoneCheck.as_view(), name='v2_phoneCheck'),
     path('v2/patternCheck', views.v2_patternCheck, name='v2_patternCheck'),
     path('v2/questionCheck', views.v2_questionCheck, name='v2_questionCheck'),
-]
+] 
