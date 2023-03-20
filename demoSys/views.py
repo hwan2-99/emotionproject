@@ -3,9 +3,12 @@ import hashlib
 import hmac
 
 import json
+import uuid
+import wave
 from random import randint
 import random
 import socket
+import numpy as np
 
 import datetime
 from datetime import date
@@ -20,14 +23,16 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 import pymongo as mongo
 import time
-
+from uuid import uuid4
 # Create your views here.
 from requests import Response
 from rest_framework import status
+from rest_framework.decorators import api_view
 from rest_framework.utils import json
 
 # sqlite3 모델들
 from emotionSys.models import User, AuthSms, Auth_Category, AuthEmail, Emotion, EncryptionAlgorithm, ChoiceCheck  # , User_Security, Security
+from faceEmotion.face_Recognition import myface
 from my_settings import EMAIL
 
 # 암복호화 관련
@@ -38,7 +43,10 @@ from Crypto.Util.Padding import pad,unpad
 
 from uuid import uuid4
 
-def v2_demo_login(request): 
+from voiceEmotion.main import emotionCheck
+
+
+def v2_demo_login(request):
     now = time
     client1 = mongo.MongoClient()
     dbs = client1.securiry
@@ -532,3 +540,329 @@ class v2_phoneCheck(View):
             print('fail')
             return render(request, 'check.html')
 
+def v2_demo_analyze(request):
+    if request.method == 'GET':
+        return render(request, 'demo_analyze.html')
+
+@api_view(['GET','POST'])
+def demo_face(request):
+
+    now = time
+    neutral = request.POST['neutral']
+    happy = request.POST['happy']
+    angry = request.POST['angry']
+    sad = request.POST['sad']
+    fearful = request.POST['fearful']
+
+    image = request.POST['faceURL'].split(',')[1]
+    decoded_data = base64.b64decode(image)
+    np_data = np.fromstring(decoded_data, np.uint8)
+
+    id = request.session.get("user_email")
+    result = myface(np_data,id)
+    uuid_name = uuid4().hex
+    data_json = {
+        "_id": uuid_name,
+        "neutral": neutral,
+        "happy": happy,
+        "angry": angry,
+        "sad": sad,
+        "fearful": fearful,
+        "Date": str(datetime.datetime.now())
+    }
+
+    json_data = json.dumps(data_json)
+    print("hello face")
+    user_email = request.session.get('user_email')
+    # Mongo 클라이언트 생성
+    client1 = mongo.MongoClient()
+    db = client1.analyze    # 데이터 베이스 선택
+    faceLog = db.faceanalyze    # 컬렉션 선택
+    logResult =  faceLog.find({})
+    list = []
+
+    if float(fearful) >= 0.2:
+        print("fearful Test ~~~~~~~~~~~~~~~~~~")
+        note = '불안한 감정'
+    else:
+        note = '-'
+
+    for log in logResult:
+        timestamp = log['timestamp']
+        analyzeInfo = log['analyzeInfo']
+        note = log['note']
+
+        list.append({'timestamp': timestamp,
+                     'analyzeInfo': fearful,
+                     'note': note,
+        })
+
+    userLog = {'userId': user_email,
+               'timestamp': now.strftime('%Y-%m-%d %H:%M:%S'),
+               'analyzeInfo': fearful,
+               'note': note,
+               }
+    faceLog.insert_one(userLog)
+
+    return Response({'data': data_json, 'face': result}, status=status.HTTP_200_OK)
+
+def v2_demo_analyze_face(request):
+    if request.method == 'POST':
+
+        now = time
+        neutral = request.POST['neutral']
+        happy = request.POST['happy']
+        angry = request.POST['angry']
+        sad = request.POST['sad']
+        fearful = request.POST['fearful']
+
+        image = request.POST['faceURL'].split(',')[1]
+        decoded_data = base64.b64decode(image)
+        np_data = np.fromstring(decoded_data, np.uint8)
+
+        id = request.session.get("user_email")
+        result = myface(np_data, id)
+        uuid_name = uuid4().hex
+        data_json = {
+            "_id": uuid_name,
+            "neutral": neutral,
+            "happy": happy,
+            "angry": angry,
+            "sad": sad,
+            "fearful": fearful,
+            "Date": str(datetime.datetime.now())
+        }
+
+        json_data = json.dumps(data_json)
+        print("hello face")
+        user_email = request.session.get('user_email')
+        # Mongo 클라이언트 생성
+        client1 = mongo.MongoClient()
+        db = client1.analyze  # 데이터 베이스 선택
+        faceLog = db.faceanalyze  # 컬렉션 선택
+        logResult = faceLog.find({})
+        list = []
+
+        if float(fearful) >= 0.00000250:
+            print("fearful Test ~~~~~~~~~~~~~~~~~~")
+            note = '불안한 감정'
+        else:
+            note = '-'
+
+        for log in logResult:
+            timestamp = log['timestamp']
+            analyzeInfo = log['analyzeInfo']
+            note = log['note']
+
+            list.append({'timestamp': timestamp,
+                         'analyzeInfo': fearful,
+                         'note': note,
+                         })
+
+        userLog = {'userId': user_email,
+                   'timestamp': now.strftime('%Y-%m-%d %H:%M:%S'),
+                   'analyzeInfo': analyzeInfo,
+                   'note': note,
+                   }
+
+        faceLog.insert_one(userLog)
+
+        return render(request, 'demo_analyze_face.html', {
+            'face': result
+            })
+
+def v2_demo_analyze_face(request):
+
+    if request.method == 'GET':
+        now = time
+        # Mongo 클라이언트 생성
+        client1 = mongo.MongoClient()
+        db = client1.analyze  # 데이터 베이스 선택
+        faceLog = db.faceanalyze  # 컬렉션 선택
+        logResult = faceLog.find({})
+        list = []
+        user_email = request.session.get('user_email')
+        for log in logResult:
+            timestamp = log['timestamp']
+            analyzeInfo = log['analyzeInfo']
+            note = log['note']
+
+            list.append({'timestamp': timestamp,
+                         'analyzeInfo': analyzeInfo,
+                         'note': note,
+                         })
+
+        userLog = {'userId': user_email,
+                   'timestamp': now.strftime('%Y-%m-%d %H:%M:%S'),
+                   'analyzeInfo': analyzeInfo,
+                   'note': note,
+                   }
+
+        faceLog.insert_one(userLog)
+
+        return render(request, 'demo_analyze_face.html',{
+            'logResult':list
+        })
+
+@csrf_exempt
+@api_view(['GET', 'POST'])
+def demo_voice(request):
+    if request.method == "POST":
+
+        # 음성 서버에 저장하는 작업
+        audio_file = request.FILES.get('audio_data', None)
+
+        obj = wave.open(audio_file, 'r')
+        audio = wave.open('voiceEmotion/test.wav', 'wb')
+        audio.setnchannels(obj.getnchannels())
+        audio.setnframes(obj.getnframes())
+        audio.setsampwidth(obj.getsampwidth())
+        audio.setframerate(obj.getframerate())
+        blob = audio_file.read()
+        audio.writeframes(blob)
+
+        voiceresult = emotionCheck()
+
+        print("hello voice")
+        id = request.session.get("user_email")
+        today = date.today()
+        uuid_name = uuid4().hex
+
+        data_json = {
+            '_id': uuid_name,
+            'positive': voiceresult['neutral'],
+            'negative': voiceresult['fear'],
+            'date': str(datetime.datetime.now())
+        }
+
+        # Mongo 클라이언트 생성
+        client1 = mongo.MongoClient()
+        db = client1.voice
+        DBVoice = db[id]
+        DBVoice.insert_one(data_json)
+
+        client2 = mongo.MongoClient()
+        db2 = client2.voice_count
+        DBVoice_Count = db2[id]
+        DBVoice_Count.update({'_id': id}, {
+            '$inc': {'positive_cnt': 1},
+        }, upsert=True)
+        DBVoice_Count.update({'_id': id}, {
+            '$inc': {'negative_cnt': 1},
+        }, upsert=True)
+
+        if voiceresult['fear'] >= 0.5:
+            db2 = client1.fail
+            dbfail = db2[id]
+            data = {
+                "_id": uuid_name,
+                "detection": "voice",
+                "result": voiceresult['fear'],
+                "date": str(datetime.datetime.now())
+            }
+            dbfail.insert_one(data)
+
+        print(data_json)
+        return Response({'data': data_json}, status=status.HTTP_200_OK)
+
+def v2_demo_analyze_voice(request):
+    if request.method == 'POST':
+
+        now = time
+        # 음성 서버에 저장하는 작업
+        audio_file = request.FILES.get('audio_data', None)
+
+        obj = wave.open(audio_file, 'r')
+        audio = wave.open('voiceEmotion/test.wav', 'wb')
+        audio.setnchannels(obj.getnchannels())
+        audio.setnframes(obj.getnframes())
+        audio.setsampwidth(obj.getsampwidth())
+        audio.setframerate(obj.getframerate())
+        blob = audio_file.read()
+        audio.writeframes(blob)
+
+        voiceresult = emotionCheck()
+
+        print("hello voice")
+        id = request.session.get("user_email")
+        today = date.today()
+        uuid_name = uuid4().hex
+
+        data_json = {
+            '_id': uuid_name,
+            'positive': voiceresult['neutral'],
+            'negative': voiceresult['fear'],
+            'date': str(datetime.datetime.now())
+        }
+
+        json_data = json.dumps(data_json)
+        user_email = request.session.get('user_email')
+
+        # Mongo 클라이언트 생성
+        client1 = mongo.MongoClient()
+        db = client1.analyze  # 데이터 베이스 선택
+        voiceLog = db.voiceanalyze  # 컬렉션 선택
+        logResult = voiceLog.find({})
+        list = []
+
+        if voiceresult['fear'] >= 0.5:
+            print("fearful Test ~~~~~~~~~~~~~~~~~~")
+            note = '불안한 감정'
+        else:
+            note = '-'
+
+        for log in logResult:
+            timestamp = log['timestamp']
+            analyzeInfo = log['analyzeInfo']
+            note = log['note']
+
+            list.append({'timestamp': timestamp,
+                         'analyzeInfo': voiceresult,
+                         'note': note,
+                         })
+
+        userLog = {'userId': user_email,
+                   'timestamp': now.strftime('%Y-%m-%d %H:%M:%S'),
+                   'analyzeInfo': analyzeInfo,
+                   'note': note,
+                   }
+
+        voiceLog.insert_one(userLog)
+
+        return render(request, 'demo_analyze_voice.html', {
+            'voice': voiceresult
+            })
+
+def v2_demo_analyze_voice(request):
+
+    if request.method == 'GET':
+        now = time
+        # Mongo 클라이언트 생성
+        client1 = mongo.MongoClient()
+        db = client1.analyze  # 데이터 베이스 선택
+        voiceLog = db.voiceanalyze  # 컬렉션 선택
+        logResult = voiceLog.find({})
+        list = []
+        user_email = request.session.get('user_email')
+        for log in logResult:
+            timestamp = log['timestamp']
+            analyzeInfo = log['analyzeInfo']
+            note = log['note']
+
+            print(analyzeInfo)
+            list.append({'timestamp': timestamp,
+                         'analyzeInfo': analyzeInfo,
+                         'note': note,
+                         })
+
+        userLog = {'userId': user_email,
+                   'timestamp': now.strftime('%Y-%m-%d %H:%M:%S'),
+                   'analyzeInfo': analyzeInfo,
+                   'note': note,
+                   }
+
+        voiceLog.insert_one(userLog)
+
+        return render(request, 'demo_analyze_voice.html',{
+            'logResult':list
+        })

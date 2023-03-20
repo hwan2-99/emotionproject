@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+</body>
+</html>{% load static %}
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    <script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
+    <script src='{% static "assets/js/app.js" %}'></script>
+    <script src='{% static "assets/js/face-api.min.js" %}'></script>
+    <style>
+        * {
+            margin:0;
+            padding:0;
+        }
+
+        body {
+            margin:0;
+            padding:0;
+            font-family:"맑은 고딕";
+            font-size:12px;
+            color:#333;
+        }
+
+        img {
+            border:0;
+        }
+
+        a {
+            text-decoration:none;
+            color:#333;
+        }
+
+        ul,
+        li {
+            list-style:none;
+        }
+
+        nav{
+            width:220px;
+            float: left;
+            background-color:#eee;
+            /* border-right:1px solid #ddd; */
+            /* height:100%  그냥 적용 안됨. 부모개념이 있어야 채워질 수 있음 */
+            text-align: center;
+            position:fixed; /*공중에 떠서 공간을 차지하지 않음*/
+            height:100% /*fixed를 해서 높이 100%가 가능해짐*/
+        }
+        h1{ font-size:18px;  padding-top:20px; text-align: center }
+        .menu {}
+        .menu li {}
+
+        button  {
+            width: 100%;
+            padding: 8px 16px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            display:block;
+            color:#555;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        button:last-child {
+            margin-bottom: 0px;
+        }
+
+        button:hover { background-color:yellowgreen; color:white;}
+        .nav-link{
+        height: 100%
+        }
+
+        .top {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-evenly;
+            margin-left: 220px;
+        }
+
+        .title {
+            border: 1px solid#333;
+            font-size: 16px;
+            width: 400px;
+            height: 50px;
+            line-height: 50px;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .picture {
+            width: 132px;
+            height: 170px;
+            border: 1px solid #333;
+            margin-top: 20px;
+        }
+
+
+    </style>
+
+    <title>Document</title>
+
+</head>
+<script>
+    let detectTF = false;
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+</script>
+<body>
+<nav>
+    <h1>감성정보 분석 서비스</h1>
+    <br>
+{#    {% if username %}#}
+        <li><a href="/v2/demo_analyze_face">표정 분석</a></li>
+        <li><a href="/v2/demo_analyze_voice">목소리 분석</a></li>
+        <li><a href="/v2/demo_analyze_brain">뇌파 분석</a></li>
+{#    {% endif %}#}
+</nav>
+<div class="top">
+    <video id="video" width="720" height="560" autoplay muted style="visibility: hidden ;position: fixed"></video>
+    <canvas id="canvas_video"style="display: none; visibility: hidden ;position: fixed"></canvas>
+    <audio id="snapSound" src="audio/snap.wav" preload = "auto"></audio>
+    <!-- d-sm-flex justify-content-between align-items-center mb-4 -->
+    <h3 class="title">사용자 얼굴 정보 수집 및 분석하고 있습니다.</h3>
+    <div class="picture"></div>
+    <div>
+        <div id="voice_loading" style="display:none" class="spinner-grow text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div></div>
+        <div id="face_loading" style="display:none" class="spinner-grow text-secondary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div></div>
+        <div id="brainwave_loading" style="display:none" class="spinner-grow text-success" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+    <!-- text-dark mb-0 -->
+</div>
+<div style="margin-left: 220px;padding: 30px" >
+    <table  class="table table-bordered" >
+        <thead style=" background-color:yellowgreen; color:white;">
+        <tr>
+            <th scope="col">Timestamp</th>
+            <th scope="col">분석 정보</th>
+            <th scope="col">비고</th>
+
+        </tr>
+        </thead>
+        <tbody>
+        {% for log in logResult %}
+            <tr>
+            <td>{{log.timestamp}}</td>
+            <td>{{log.analyzeInfo}}</td>
+            <td>{{log.note}}</td>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+ <script src='{% static "assets/js/app.js" %}'></script>
+    <div id="formats"></div>
+
+    {% if type != 1 %}
+    <script>
+        const video = document.getElementById("video");
+
+        // face api 허용
+        Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri("{% static 'assets/models' %}"),
+          faceapi.nets.faceLandmark68Net.loadFromUri("{% static 'assets/models' %}"),
+          faceapi.nets.faceRecognitionNet.loadFromUri("{% static 'assets/models' %}"),
+          faceapi.nets.faceExpressionNet.loadFromUri("{% static 'assets/models' %}"),
+        ]).then(startVideo);
+
+        // 비디오 시작 함수
+        function startVideo() {
+          navigator.mediaDevices
+            .getUserMedia({ video: true })
+            .then(function (stream) {
+              video.srcObject = stream;
+            })
+            .catch(function (err) {
+              console.log(err);
+            });
+        }
+
+        // 비디오 사이즈
+        video.addEventListener("playing", () => {
+          const canvas = faceapi.createCanvasFromMedia(video);
+          document.body.append(canvas);
+          const displaySize = { width: video.width, height: video.height };
+          faceapi.matchDimensions(canvas, displaySize);
+
+        });
+        // 비동기 처리 얼굴 표정 값
+        setInterval(async () => {
+            document.getElementById("face_loading").style.display = 'block';
+            const detections = await faceapi
+              .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+              .withFaceLandmarks()
+              .withFaceExpressions();
+            let data = detections[0].expressions.fearful;
+            console.log(parseFloat(data).toFixed(8));
+
+            const canvas = document.getElementById("canvas_video");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext("2d").drawImage(video, 0, 0,canvas.width, canvas.height);
+            const dataURL = canvas.toDataURL();
+            let fd = new FormData();
+
+            // 암호화 대상 데이터
+            let faceURL = dataURL;
+            let neutral = parseFloat(detections[0].expressions.neutral).toFixed(8);
+            let happy = parseFloat(detections[0].expressions.happy).toFixed(8);
+            let angry = parseFloat(detections[0].expressions.angry).toFixed(8);
+            let sad = parseFloat(detections[0].expressions.sad).toFixed(8);
+            let fearful = parseFloat(detections[0].expressions.fearful).toFixed(8);
+            let startTime = new Date().getTime();
+
+            fd.append("faceURL", faceURL);
+            fd.append("neutral", neutral);
+            fd.append("happy", happy);
+            fd.append("angry", angry);
+            fd.append("sad", sad);
+            fd.append("fearful", fearful);
+            fd.append("startTime", startTime);
+
+            $.ajax({
+                headers: {'X-CSRFToken': csrftoken},
+                type : 'POST',
+                url : '/v2/demo_face',
+                data : fd,
+                dataType: 'json',
+                processData: false,    // 반드시 작성
+                contentType: false,    // 반드시 작성
+                success : function(result){
+                    fear = parseFloat(detections[0].expressions.fearful).toFixed(8)
+                },
+            });
+          }, 10000);
+        document.getElementById("face_loading").style.display = 'none';
+        //미디어 허용
+        if (navigator.mediaDevices.getUserMedia) {
+          navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function (stream) {
+              video.srcObject = stream;
+            })
+            .catch(function (err0r) {
+              console.log("Something went wrong!");
+            });
+        }
+    </script>
+    {% endif %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    {% if username %}
+    <script src='{% static "assets/js/check.js" %}'></script>
+    {% endif %}
+    <script src="{% static 'assets/bootstrap/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'assets/js/chart.min.js' %}"></script>
+    <script src="{% static 'assets/js/bs-init.js' %}"></script>
+    <script src="{% static 'assets/js/theme.js' %}"></script>
+</body>
+</html>

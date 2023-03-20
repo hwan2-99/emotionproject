@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'emotionSys',
+    'demoSys',
     'restApi',
     'rest_framework',
     'django.contrib.contenttypes',
