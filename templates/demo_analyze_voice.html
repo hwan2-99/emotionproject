@@ -1,23 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-
-</body>
-</html>{% load static %}
+{% load static %}
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
     <script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
-    <script src='{% static "assets/js/app.js" %}'></script>
-    <script src='{% static "assets/js/face-api.min.js" %}'></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <style>
         * {
             margin:0;
@@ -57,8 +46,6 @@
             height:100% /*fixed를 해서 높이 100%가 가능해짐*/
         }
         h1{ font-size:18px;  padding-top:20px; text-align: center }
-        .menu {}
-        .menu li {}
 
         button  {
             width: 100%;
@@ -106,6 +93,7 @@
         }
 
 
+
     </style>
 
     <title>Document</title>
@@ -129,21 +117,24 @@
         }
         return cookieValue;
     }
+
     const csrftoken = getCookie('csrftoken');
+</script>
 </script>
 <body>
 <nav>
     <h1>감성정보 분석 서비스</h1>
     <br>
 {#    {% if username %}#}
+        <!-- <li><a href="/v2/demo_analyze_face">표정 분석</a></li>
+        <li><a href="/v2/demo_analyze_voice">목소리 분석</a></li>
+        <li><a href="/v2/demo_analyze_brain">뇌파 분석</a></li> -->
         <button type="button" onclick="location.href='/v2/demo_analyze_face'">표정분석</button>
         <button type="button" onclick="location.href='/v2/demo_analyze_voice'">목소리분석</button>
         <button type="button" onclick="location.href='/v2/demo_analyze_brain'">뇌파분석</button>
 {#    {% endif %}#}
 </nav>
 <div class="top">
-    <video id="video" width="720" height="560" autoplay muted style="visibility: hidden ;position: fixed"></video>
-    <canvas id="canvas_video"style="display: none; visibility: hidden ;position: fixed"></canvas>
     <audio id="snapSound" src="audio/snap.wav" preload = "auto"></audio>
     <!-- d-sm-flex justify-content-between align-items-center mb-4 -->
     <h3 class="title">사용자 얼굴 정보 수집 및 분석하고 있습니다.</h3>
@@ -163,7 +154,7 @@
     </div>
     <!-- text-dark mb-0 -->
 </div>
-<div style="margin-left: 220px;padding: 30px" >
+<div style="margin-left: 250px; padding: 30px" >
     <table  class="table table-bordered" >
         <thead style=" background-color:yellowgreen; color:white;">
         <tr>
@@ -183,102 +174,110 @@
         </tbody>
     </table>
 </div>
- <script src='{% static "assets/js/app.js" %}'></script>
     <div id="formats"></div>
 
     {% if type != 1 %}
+        <script>
+            detectTF = true;
+            setInterval(function () {
+                startRecording();
+                setTimeout(stopRecording, 5000);
+            }, 10000);
+        </script>
     <script>
-        const video = document.getElementById("video");
+        //webkitURL is deprecated but nevertheless
 
-        // face api 허용
-        Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri("{% static 'assets/models' %}"),
-          faceapi.nets.faceLandmark68Net.loadFromUri("{% static 'assets/models' %}"),
-          faceapi.nets.faceRecognitionNet.loadFromUri("{% static 'assets/models' %}"),
-          faceapi.nets.faceExpressionNet.loadFromUri("{% static 'assets/models' %}"),
-        ]).then(startVideo);
+URL = window.URL || window.webkitURL;
 
-        // 비디오 시작 함수
-        function startVideo() {
-          navigator.mediaDevices
-            .getUserMedia({ video: true })
-            .then(function (stream) {
-              video.srcObject = stream;
-            })
-            .catch(function (err) {
-              console.log(err);
-            });
-        }
+var gumStream;                   //stream from getUserMedia()
+var rec;                      //Recorder.js object
+var input;                      //MediaStreamAudioSourceNode we'll be recording
 
-        // 비디오 사이즈
-        video.addEventListener("playing", () => {
-          const canvas = faceapi.createCanvasFromMedia(video);
-          document.body.append(canvas);
-          const displaySize = { width: video.width, height: video.height };
-          faceapi.matchDimensions(canvas, displaySize);
+var AudioContext = window.AudioContext || window.webkitAudioContext;
+var audioContext //audio context to help us record
 
+
+function startRecording() {
+   console.log("recordButton clicked");
+
+   document.getElementById("voice_loading").style.display = "block";
+    var constraints = { audio: true, video:false }
+
+
+   navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
+      console.log("getUserMedia() success, stream created, initializing Recorder.js ...");
+
+      audioContext = new AudioContext();
+
+      document.getElementById("formats").innerHTML="Format: 1 channel pcm @ "+audioContext.sampleRate/1000+"kHz"
+
+      gumStream = stream;
+
+      input = audioContext.createMediaStreamSource(stream);
+
+      rec = new Recorder(input,{numChannels:1})
+
+      rec.record()
+
+      console.log("Recording started");
+
+   }).catch(function(err) {
+   });
+}
+
+function stopRecording() {
+   console.log("stopButton clicked");
+
+   //tell the recorder to stop the recording
+   rec.stop();
+
+   //stop microphone access
+   gumStream.getAudioTracks()[0].stop();
+
+   //create the wav blob and pass it on to createDownloadLink
+   rec.exportWAV(createDownloadLink);
+}
+
+function createDownloadLink(blob) {
+   console.log()
+   var url = URL.createObjectURL(blob);
+   var au = document.createElement('audio');
+   var li = document.createElement('li');
+   var link = document.createElement('a');
+
+   //name of .wav file to use during upload and download (without extendion)
+   var filename = "test";
+
+   //add controls to the <audio> element
+   au.controls = true;
+   au.src = url;
+
+   //upload link
+   var upload = document.createElement('a');
+   upload.href="#";
+   upload.innerHTML = "Upload";
+   var xhr=new XMLHttpRequest();
+   var fd=new FormData();
+   console.log("목소리")
+   fd.append("audio_data", blob, filename);
+   $.ajax({
+         headers: {'X-CSRFToken': csrftoken},
+            type : 'POST',
+            url : '/v2/demo_voice',
+            data : fd,
+            dataType: 'json',
+            processData: false,    // 반드시 작성
+            contentType: false,    // 반드시 작성
+            success : function(result) {
+                if (result.data.negative > 0.4) {
+                }
+            }
         });
-        // 비동기 처리 얼굴 표정 값
-        setInterval(async () => {
-            document.getElementById("face_loading").style.display = 'block';
-            const detections = await faceapi
-              .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-              .withFaceLandmarks()
-              .withFaceExpressions();
-            let data = detections[0].expressions.fearful;
-            console.log(parseFloat(data).toFixed(8));
 
-            const canvas = document.getElementById("canvas_video");
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext("2d").drawImage(video, 0, 0,canvas.width, canvas.height);
-            const dataURL = canvas.toDataURL();
-            let fd = new FormData();
-
-            // 암호화 대상 데이터
-            let faceURL = dataURL;
-            let neutral = parseFloat(detections[0].expressions.neutral).toFixed(8);
-            let happy = parseFloat(detections[0].expressions.happy).toFixed(8);
-            let angry = parseFloat(detections[0].expressions.angry).toFixed(8);
-            let sad = parseFloat(detections[0].expressions.sad).toFixed(8);
-            let fearful = parseFloat(detections[0].expressions.fearful).toFixed(8);
-            let startTime = new Date().getTime();
-
-            fd.append("faceURL", faceURL);
-            fd.append("neutral", neutral);
-            fd.append("happy", happy);
-            fd.append("angry", angry);
-            fd.append("sad", sad);
-            fd.append("fearful", fearful);
-            fd.append("startTime", startTime);
-
-            $.ajax({
-                headers: {'X-CSRFToken': csrftoken},
-                type : 'POST',
-                url : '/v2/demo_face',
-                data : fd,
-                dataType: 'json',
-                processData: false,    // 반드시 작성
-                contentType: false,    // 반드시 작성
-                success : function(result){
-                    fear = parseFloat(detections[0].expressions.fearful).toFixed(8)
-                },
-            });
-          }, 10000);
-        document.getElementById("face_loading").style.display = 'none';
-        //미디어 허용
-        if (navigator.mediaDevices.getUserMedia) {
-          navigator.mediaDevices.getUserMedia({ video: true })
-            .then(function (stream) {
-              video.srcObject = stream;
-            })
-            .catch(function (err0r) {
-              console.log("Something went wrong!");
-            });
-        }
+   document.getElementById("voice_loading").style.display = 'none';
+}
     </script>
     {% endif %}
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     {% if username %}
     <script src='{% static "assets/js/check.js" %}'></script>
     {% endif %}

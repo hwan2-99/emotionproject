@@ -25,7 +25,7 @@ import pymongo as mongo
 import time
 from uuid import uuid4
 # Create your views here.
-from requests import Response
+from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.utils import json
@@ -714,7 +714,7 @@ def v2_demo_analyze_face(request):
 @api_view(['GET', 'POST'])
 def demo_voice(request):
     if request.method == "POST":
-
+        now = time
         # 음성 서버에 저장하는 작업
         audio_file = request.FILES.get('audio_data', None)
 
@@ -729,7 +729,6 @@ def demo_voice(request):
 
         voiceresult = emotionCheck()
 
-        print("hello voice")
         id = request.session.get("user_email")
         today = date.today()
         uuid_name = uuid4().hex
@@ -741,15 +740,15 @@ def demo_voice(request):
             'date': str(datetime.datetime.now())
         }
 
+        user_email = request.session.get('user_email')
         # Mongo 클라이언트 생성
         client1 = mongo.MongoClient()
-        db = client1.voice
-        DBVoice = db[id]
-        DBVoice.insert_one(data_json)
+        db = client1.analyze  # 데이터 베이스 선택
+        voiceLog = db.voiceanalyze  # 컬렉션 선택
+        logResult = voiceLog.find({})
+        list = []
 
-        client2 = mongo.MongoClient()
-        db2 = client2.voice_count
-        DBVoice_Count = db2[id]
+        DBVoice_Count = db[id]
         DBVoice_Count.update({'_id': id}, {
             '$inc': {'positive_cnt': 1},
         }, upsert=True)
@@ -758,22 +757,33 @@ def demo_voice(request):
         }, upsert=True)
 
         if voiceresult['fear'] >= 0.5:
-            db2 = client1.fail
-            dbfail = db2[id]
-            data = {
-                "_id": uuid_name,
-                "detection": "voice",
-                "result": voiceresult['fear'],
-                "date": str(datetime.datetime.now())
-            }
-            dbfail.insert_one(data)
+            note = '불안한 감정'
+        else:
+            note = '-'
 
-        print(data_json)
+        for log in logResult:
+            timestamp = log['timestamp']
+            analyzeInfo = log['analyzeInfo']
+            note = log['note']
+
+            list.append({'timestamp': timestamp,
+                         'analyzeInfo': analyzeInfo,
+                         'note': note,
+                         })
+
+        userLog = {'userId': user_email,
+                   'timestamp': now.strftime('%Y-%m-%d %H:%M:%S'),
+                   'analyzeInfo': voiceresult['fear'],
+                   'note': note,
+                   }
+        voiceLog.insert_one(userLog)
+
         return Response({'data': data_json}, status=status.HTTP_200_OK)
+
 
 def v2_demo_analyze_voice(request):
     if request.method == 'POST':
-
+        print('실행')
         now = time
         # 음성 서버에 저장하는 작업
         audio_file = request.FILES.get('audio_data', None)
@@ -811,16 +821,19 @@ def v2_demo_analyze_voice(request):
         logResult = voiceLog.find({})
         list = []
 
-        if voiceresult['fear'] >= 0.5:
-            print("fearful Test ~~~~~~~~~~~~~~~~~~")
-            note = '불안한 감정'
-        else:
-            note = '-'
+        print(voiceresult)
+
 
         for log in logResult:
             timestamp = log['timestamp']
-            analyzeInfo = log['analyzeInfo']
+            voiceInfo = log['voiceInfo']
             note = log['note']
+
+            if voiceresult['negative'] >= 0.5:
+                print("fearful Test ~~~~~~~~~~~~~~~~~~")
+                note = '불안한 감정'
+            else:
+                note = '-'
 
             list.append({'timestamp': timestamp,
                          'analyzeInfo': voiceresult,
@@ -829,7 +842,7 @@ def v2_demo_analyze_voice(request):
 
         userLog = {'userId': user_email,
                    'timestamp': now.strftime('%Y-%m-%d %H:%M:%S'),
-                   'analyzeInfo': analyzeInfo,
+                   'voiceInfo': voiceInfo,
                    'note': note,
                    }
 
@@ -856,20 +869,32 @@ def v2_demo_analyze_voice(request):
             analyzeInfo = log['analyzeInfo']
             note = log['note']
 
-            print(analyzeInfo)
+            if analyzeInfo >= 0.5:
+                print("fearful Test ~~~~~~~~~~~~~~~~~~")
+                note = '불안한 감정'
+            else:
+                note = '-'
+
             list.append({'timestamp': timestamp,
                          'analyzeInfo': analyzeInfo,
                          'note': note,
                          })
-
         userLog = {'userId': user_email,
-                   'timestamp': now.strftime('%Y-%m-%d %H:%M:%S'),
-                   'analyzeInfo': analyzeInfo,
-                   'note': note,
-                   }
+                    'timestamp': now.strftime('%Y-%m-%d %H:%M:%S'),
+                    'analyzeInfo': analyzeInfo,
+                    'note': note,
+                    }
 
         voiceLog.insert_one(userLog)
 
         return render(request, 'demo_analyze_voice.html',{
             'logResult':list
+        })
+
+def v2_demo_analyze_brain(request):
+
+    if request.method == 'GET':
+
+
+        return render(request, 'demo_analyze_brain.html',{
         })
