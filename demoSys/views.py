@@ -687,6 +687,12 @@ def v2_demo_analyze_face(request):
             analyzeInfo = log['analyzeInfo']
             note = log['note']
 
+            if float(analyzeInfo) >= 0.00000250:
+                print("fearful Test ~~~~~~~~~~~~~~~~~~")
+                note = '불안한 감정'
+            else:
+                note = '-'
+
             list.append({'timestamp': timestamp,
                          'analyzeInfo': analyzeInfo,
                          'note': note,
@@ -844,6 +850,7 @@ def v2_demo_analyze_voice(request):
         logResult = voiceLog.find({})
         list = []
         user_email = request.session.get('user_email')
+
         for log in logResult:
             timestamp = log['timestamp']
             analyzeInfo = log['analyzeInfo']
