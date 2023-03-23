@@ -9,11 +9,13 @@ from random import randint
 import random
 import socket
 import numpy as np
-
+import warnings
 import datetime
 from datetime import date
 import requests
 from django.contrib.sites.shortcuts import get_current_site
+from simple_websocket_server import WebSocketServer, WebSocket
+import base64, cv2
 from django.core.mail import EmailMessage
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
@@ -674,6 +676,19 @@ def v2_demo_analyze_face(request):
 def v2_demo_analyze_face(request):
 
     if request.method == 'GET':
+
+        # def handle(self):
+        #     msg = self.data
+        #     img = cv2.imdecode(np.fromstring(base64.b64decode(msg.split(',')[1]), np.uint8), cv2.IMREAD_COLOR)
+        #     cv2.imshow('image', img)
+        #     cv2.waitKey(1)
+        #
+        #     def connected(self):
+        #         print(self.address, 'connected')
+        #
+        #     def handle_close(self):
+        #         print(self.address, 'closed')
+
         now = time
         # Mongo 클라이언트 생성
         client1 = mongo.MongoClient()
@@ -705,7 +720,7 @@ def v2_demo_analyze_face(request):
                    }
 
         faceLog.insert_one(userLog)
-
+        # server = WebSocketServer('192.168.64.166', 8000, v2_demo_analyze_face)
         return render(request, 'demo_analyze_face.html',{
             'logResult':list
         })

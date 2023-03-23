@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <title>Title</title>
 </head>
-<body>
-
-</body>
 </html>{% load static %}
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
@@ -57,8 +54,6 @@
             height:100% /*fixed를 해서 높이 100%가 가능해짐*/
         }
         h1{ font-size:18px;  padding-top:20px; text-align: center }
-        .menu {}
-        .menu li {}
 
         button  {
             width: 100%;
@@ -77,7 +72,7 @@
         }
 
         button:hover { background-color:yellowgreen; color:white;}
-        .nav-link{
+        nav-link{
         height: 100%
         }
 
@@ -98,9 +93,7 @@
             margin-top: 50px;
         }
 
-        .picture {
-            width: 132px;
-            height: 170px;
+        #videortc {
             border: 1px solid #333;
             margin-top: 20px;
         }
@@ -141,13 +134,14 @@
         <button type="button" onclick="location.href='/v2/demo_analyze_brain'">뇌파분석</button>
 {#    {% endif %}#}
 </nav>
+
 <div class="top">
     <video id="video" width="720" height="560" autoplay muted style="visibility: hidden ;position: fixed"></video>
     <canvas id="canvas_video"style="display: none; visibility: hidden ;position: fixed"></canvas>
     <audio id="snapSound" src="audio/snap.wav" preload = "auto"></audio>
     <!-- d-sm-flex justify-content-between align-items-center mb-4 -->
     <h3 class="title">사용자 얼굴 정보 수집 및 분석하고 있습니다.</h3>
-    <div class="picture"></div>
+        <video id="videortc" width="170px" height="132px" autoplay></video>
     <div>
         <div id="voice_loading" style="display:none" class="spinner-grow text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
@@ -188,7 +182,19 @@
 
     {% if type != 1 %}
     <script>
-        const video = document.getElementById("video");
+        navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+        if (navigator.getUserMedia) {
+        navigator.getUserMedia({ video: true },
+          function(stream) {
+            const video = document.getElementById('videortc');
+            video.srcObject = stream;
+            video.play();
+          },
+          function(error) {
+            console.log(error);
+          }
+        );
+      }
 
         // face api 허용
         Promise.all([
@@ -276,6 +282,7 @@
               console.log("Something went wrong!");
             });
         }
+
     </script>
     {% endif %}
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
