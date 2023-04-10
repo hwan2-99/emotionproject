@@ -16,6 +16,7 @@ urlpatterns = [
     path('v2/demo_analyze_face', views.v2_demo_analyze_face, name='v2_demo_analyze_face'),
     path('v2/demo_analyze_voice', views.v2_demo_analyze_voice, name='v2_demo_analyze_voice'),
     path('v2/demo_analyze_brain', views.v2_demo_analyze_brain, name='v2_demo_analyze_brain'),
+    path('v2/demo_analyze_graph', views.v2_demo_analyze_graph, name='v2_demo_analyze_graph'),
     path('demo_voice', views.demo_voice, name='demo_voice'),  # User에 관한 API를 처리하는 view로 Request를 넘김
     path('v2/demo_voice', views.demo_voice, name='demo_voice'),  # User에 관한 API를 처리하는 view로 Request를 넘김
     path('demo_face', views.demo_face, name='demo_face'),  # User에 관한 API를 처리하는 view로 Request를 넘김

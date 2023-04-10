@@ -913,3 +913,36 @@ def v2_demo_analyze_brain(request):
 
         return render(request, 'demo_analyze_brain.html',{
         })
+
+def v2_demo_analyze_graph(request):
+    client1 = mongo.MongoClient()
+    emotion_db = client1.emotion  # database 선택
+    emotion_collection = emotion_db.emotion  # collection 선택
+    result = emotion_collection.find({})  # document 모두 조회
+
+    user_email = request.session.get('user_email')
+
+    list = []
+    for emotion in result:
+        face = emotion['face']
+        voice = emotion['voice']
+        brain = emotion['brain']
+        id = emotion['id']
+        user = emotion['user']
+        create_at = emotion['createAt']
+
+        list.append({'id': id,
+                     'face': face,
+                     'voice': voice,
+                     'brain': brain,
+                     'user': user,
+                     'createAt': create_at,
+                     'result': False
+                    })
+
+    return render(request, 'demo_analyze_graph.html',
+                  {'result': list,
+                   'data': request.session.get('userName'),
+                   'user': user_email,
+                   'field': user_email,
+                   })
