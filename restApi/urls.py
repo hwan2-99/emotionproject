@@ -12,5 +12,7 @@ urlpatterns = [
     path('ip', views.ip, name='ip'), # IP를 3개까지 저장하고, IP가 유효한지 판단하는 view로 Request를 넘김
     path('v2/ip', views.ip, name='ip'), # IP를 3개까지 저장하고, IP가 유효한지 판단하는 view로 Request를 넘김
     path('mypage/emotion', views.mypage_emotion, name="mypage_emotion"),
+    path('choice-check', views.choice_check, name="choice_check"),
+    path('encryption-algorithm', views.encryption_algorithm, name="encryption_algorithm"),
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
 ]

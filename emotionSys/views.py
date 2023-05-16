@@ -21,6 +21,7 @@ import pymongo as mongo
 # Create your views here.
 from requests import Response
 from rest_framework import status
+from rest_framework.decorators import api_view
 from rest_framework.utils import json
 
 from emotionSys.models import User, AuthSms, Auth_Category, AuthEmail, Emotion, EncryptionAlgorithm, ChoiceCheck  # , User_Security, Security
@@ -434,6 +435,10 @@ def v2_voicelog(request):
 
     result = DBVoice.find().sort("date", -1)
     result = list(result)
+
+
+    print(result)
+    return
 
     for index, item in enumerate(result):
         encrypted_data = item['encrypted_data']

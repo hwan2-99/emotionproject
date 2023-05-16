@@ -20,9 +20,13 @@ from faceEmotion.face_Recognition import myface
 from django import http
 import wave
 from faceEmotion.face import faceEmotion
+# sqlite3 모델들
+from emotionSys.models import EncryptionAlgorithm, ChoiceCheck
 
 from Crypto import Random
 from Crypto.Cipher import AES
+
+adminEmail = 'admin@gmail.com'
 
 key = [0x10, 0x01, 0x15, 0x1B, 0xA1, 0x11, 0x57, 0x72, 0x6C, 0x21, 0x56, 0x57, 0x62, 0x16, 0x05, 0x3D,
         0xFF, 0xFE, 0x11, 0x1B, 0x21, 0x31, 0x57, 0x72, 0x6B, 0x21, 0xA6, 0xA7, 0x6E, 0xE6, 0xE5, 0x3F]
@@ -292,3 +296,34 @@ def mypage_emotion(request):
         # 아닐 경우 return 400
 
         return Response("ok", status=status.HTTP_200_OK)
+
+@api_view(['GET','PATCH'])
+def choice_check(request):
+    if request.method == "GET":
+        email = request.GET.get('email')
+        choiceCheck = ChoiceCheck.objects.get(email=email)
+
+        return Response(choiceCheck.choice, status=status.HTTP_200_OK)
+
+    if request.method == "PATCH" and adminEmail == request.session.get("user_email"):
+        email = request.data['email']
+        settingNum = request.data['settingNum']
+        choiceCheck = ChoiceCheck.objects.get(email=email)
+        choiceCheck.choice = settingNum
+        choiceCheck.save()
+        return Response('ok', status=status.HTTP_200_OK)
+
+@api_view(['GET','PATCH'])
+def encryption_algorithm(request):
+    if request.method == "GET":
+        email = request.GET.get('email')
+        encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=email)
+        return Response(encryptionAlgorithm.choice, status=status.HTTP_200_OK)
+
+    if request.method == "PATCH" and adminEmail == request.session.get("user_email"):
+        email = request.data['email']
+        settingNum = request.data['settingNum']
+        encryptionAlgorithm = EncryptionAlgorithm.objects.get(email=email)
+        encryptionAlgorithm.choice = settingNum
+        encryptionAlgorithm.save()
+        return Response('ok', status=status.HTTP_200_OK)
