@@ -1,17 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="58e4bc9e-c8cd-4490-9a09-e85bf6a0dd2f" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/templates/securityPopup.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/demoSys/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/demoSys/urls.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emotionProject/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/emotionProject/urls.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/emotionSys/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/emotionSys/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/restApi/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/restApi/urls.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/restApi/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/restApi/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/userManager.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/userManager.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/voiceEmotion/test.wav" beforeDir="false" afterPath="$PROJECT_DIR$/voiceEmotion/test.wav" afterDir="false" />
-    </list>
+    <list default="true" id="d3b9482e-3f15-4a13-9e8a-dc6519364046" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
